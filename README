@@ -22,6 +22,11 @@ documentation.
 
 2.0 History
 -----------
+version 0.66:
+* Implemented the getNextRequest method to actually read new data. The
+  getRequest method only reads data from the socket if there's no request
+  cached.
+
 version 0.65:
 * the getRequest method of the Net::HL7::Daemon::Client has been enabled for
   multiple incoming messages. This means that the getRequest method now tries

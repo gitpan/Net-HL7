@@ -137,6 +137,32 @@ of I<Net::HL7::Daemon>.
 
 =item $c->getRequest()
 
+Get the current request on this client. The current request is either
+the request that has been read by the getNextRequest() method, or if
+that hasn't been called yet, the request read from the socket. The
+latter is implemented by calling getNextRequest. If both fail,
+C<undef> is returned.
+In this case, then the I<Net::HL7::Daemon::Client>
+object ($c) should be discarded, and you should not call this method
+again.  Potentially, a HL7 client can receive more than one
+message. So discard the client only when there's no more requests
+pending, or the delivering service might experience timeouts.
+
+=cut
+
+sub getRequest
+{
+    my $self = shift;
+
+    ${*self}{'REQ'} && return ${*self}{'REQ'};
+
+    return $self->getNextRequest();
+}
+
+=pod
+
+=item $c->getNextRequest()
+
 Read data from the socket and turn it into an I<Net::HL7::Request>
 object which is then returned.  It returns C<undef> if reading of the
 request fails.  If it fails, then the I<Net::HL7::Daemon::Client>
@@ -147,7 +173,7 @@ pending, or the delivering service might experience timeouts.
 
 =cut
 
-sub getRequest
+sub getNextRequest
 {
     my $self = shift;
 
@@ -186,6 +212,14 @@ sub sendAck {
 
     my $self = shift;
     my $res  = shift;
+
+    # If this is true, we didn't get the incoming message yet!
+    if (! ${*self}{'REQ'}) {
+	my $msg = $self->getRequest();
+
+	# No message at all!
+	$msg || return undef;
+    }
 
     if (! ref $res) {
 	$res = new Net::HL7::Messages::ACK(${*self}{'REQ'});

@@ -3,7 +3,7 @@
 # File      : ACK.pm
 # Author    : Duco Dokter
 # Created   : Wed Mar 26 22:40:19 2003
-# Version   : $Id: ACK.pm,v 1.2 2003/04/14 18:59:32 wyldebeast Exp $ 
+# Version   : $Id: ACK.pm,v 1.3 2003/06/12 18:58:23 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
