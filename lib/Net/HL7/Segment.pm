@@ -3,7 +3,7 @@
 # File      : Segment.pm
 # Author    : Duco Dokter
 # Created   : Tue Mar  4 13:03:00 2003
-# Version   : $Id: Segment.pm,v 1.3 2003/04/04 10:50:57 wyldebeast Exp $ 
+# Version   : $Id: Segment.pm,v 1.4 2003/07/18 07:44:24 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -40,7 +40,9 @@ The Net::HL7::Segment class represents segments of the HL7 message.
 =item new($name)
 
 Create an instance of this segment. The field separator defaults to
-'|'. If the name is not given, no segment is created.
+'|'. If the name is not given, no segment is created. The segment name
+should be three characters long, and upper case. If it isn't, no
+segment is created.
 
 =cut
 sub new {
@@ -58,9 +60,10 @@ sub _init {
     
     my ($self, $name) = @_;
 
-    $self->{FIELDS}->[0] = $name;
+    (length($name) == 3) || return undef;
+    (uc($name) eq $name) || return undef;
 
-    return $name;
+    $self->{FIELDS}->[0] = $name;
 }
 
 

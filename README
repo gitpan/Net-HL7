@@ -22,6 +22,17 @@ documentation.
 
 2.0 History
 -----------
+version 0.67:
+* Added COMPONENT_SEPARATOR, REPETITION_SEPARATOR, ESCAPE_CHARACTER and
+  SUBCOMPONENT_SEPARATOR to the MSH segment. The setField method on this
+  segment, on index 2 now actually changes the values of these variables.
+  Also checks on setting field 1 on MSH, whether input is just 1 char.
+* Fixes on ACK, to set the error message.  
+* Check on segment id: it must be exactely three characters long, upper 
+  case.
+* Fixed Makefile.PL, so it now really installs into the Perl lib path.
+* Added more methods to the Message to manipulate segments.
+
 version 0.66:
 * Implemented the getNextRequest method to actually read new data. The
   getRequest method only reads data from the socket if there's no request

@@ -3,7 +3,7 @@
 # File      : ACK.pm
 # Author    : Duco Dokter
 # Created   : Wed Mar 26 22:40:19 2003
-# Version   : $Id: ACK.pm,v 1.3 2003/06/12 18:58:23 wyldebeast Exp $ 
+# Version   : $Id: ACK.pm,v 1.4 2003/07/18 07:44:24 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -91,7 +91,7 @@ one of: A, E, R. Codes can be prepended with C or A, denoting enhanced
 or normal acknowledge mode. This denotes: accept, general error and
 reject respectively. The ACK module will determine the right answer
 mode (normal or enhanced) based upon the request, if not provided.
-The message provided in $msg wiull be set in MSA 3.
+The message provided in $msg will be set in MSA 3.
 
 =cut
 sub setAckCode {

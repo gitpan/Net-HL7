@@ -5,7 +5,7 @@
 
 BEGIN {
 	$| = 1; 
-	print "1..7\n";
+	print "1..10\n";
 
 	unshift(@INC, "./lib");
 }
@@ -52,3 +52,16 @@ test(6, $seg->getName() eq "MSH", "Name is " . $seg->getName() . ", expected MSH
 test(7, $seg->toString() eq "MSH|||XXX", 
 	"Segment string is " . $seg->toString() . ", expected MSH|||XXX"
 );
+
+$seg = new Net::HL7::Segment();
+
+test(8, $seg == undef, "Segment should be undef");
+
+$seg = new Net::HL7::Segment("XXXX");
+
+test(9, $seg == undef, "Segment should be undef");
+
+$seg = new Net::HL7::Segment("xxx");
+
+test(10, $seg == undef, "Segment should be undef");
+

@@ -3,7 +3,7 @@
 # File      : Message.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:37:11 2002
-# Version   : $Id: Message.pm,v 1.5 2003/04/07 19:29:44 wyldebeast Exp $ 
+# Version   : $Id: Message.pm,v 1.8 2003/08/08 14:06:14 wyldebeast Exp $ 
 # Copyright : D.A.Dokter, Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -51,12 +51,12 @@ The Message will be created with a MSH segment as it's first segment.
 
 =over 4
 
-=item B<$m = new Net::HL7::Message()>
+=item B<$m = new Net::HL7::Message([$msg])>
 
 The constructor takes an optional string argument that is a string
-representation of a HL7 message. This makes it easy for the
-L<Net::HL7::Connection> object to return new HL7 messages from a
-server.
+representation of a HL7 message. If the string representation is not a
+valid HL7 message. according to the specifications, undef is returned
+instead of a new instance.
 
 =cut
 sub new {
@@ -74,8 +74,11 @@ sub _init {
 
     my ($self, $hl7str) = @_;
 
-    $self->{ORDER} = [];
-    $self->{SEGMENTS} = {};
+    # We store the segments both as array and as hash, to enable quick
+    # lookup by index and name.
+    #
+    $self->{SEGMENTS} = [];
+    $self->{SEGMENT_HASH} = {};
 
     # If an HL7 string is given to the constructor, parse it.
     if ($hl7str) {
@@ -137,22 +140,55 @@ sub _init {
 }
 
 
-=item addSegment($segment, $index)
 
-Set the segment at index to segment. The segment should be an instance of 
-L<Net::HL7::Segment>. If the idnex is not given, the segment is added to
-the end of the message.
+=pod
+
+=item addSegment($segment)
+
+Add the segment. to the end of the message. The segment should be an
+instance of L<Net::HL7::Segment>.
 
 =cut
 sub addSegment { 
 
-    my ($self, $segment, $idx) = @_;
+    my ($self, $segment) = @_;
 
-    $idx || ($idx = @{ $self->{ORDER} });
-
-    $self->{ORDER}->[$idx] = $segment;
+    push( @{ $self->{SEGMENTS} }, $segment);
 }
 
+
+=pod
+
+=item insertSegment($segment, $idx)
+
+Insert the segment. The segment should be an instance of
+L<Net::HL7::Segment>. If the index is not given, the segment is added
+to the  of the message.
+
+=cut
+sub insertSegment {
+
+    my ($self, $segment, $idx) = @_;
+
+    (! defined $idx) && return;
+    ($idx > @{ $self->{SEGMENTS} }) && return;
+
+    if ($idx == 0) {
+	unshift(@{ $self->{SEGMENTS} }, $segment);
+    } elsif ($idx == @{ $self->{SEGMENTS} }) {
+	push(@{ $self->{SEGMENTS} }, $segment);
+    }
+    else {
+	@{ $self->{SEGMENTS} } = 
+	    (@{ $self->{SEGMENTS} }[0..$idx-1],
+	     $segment,
+	     @{ $self->{SEGMENTS} }[$idx..@{ $self->{SEGMENTS} } -1]
+	     );
+    }
+}
+
+
+=pod 
 
 =item getSegmentByIndex($index)
 
@@ -163,9 +199,83 @@ sub getSegmentByIndex {
 
     my ($self, $index) = @_;
 
-    return $self->{ORDER}->[$index];
+    return $self->{SEGMENTS}->[$index];
 }
 
+
+=pod
+
+=item getSegmentsByName
+
+Return an array of all segments with the given name
+
+=cut 
+sub getSegmentsByName {
+
+    my ($self, $name) = @_;
+
+    my @segments = ();
+
+    foreach (@{ $self->{SEGMENTS} }) {
+	($_->getName() eq $name) && push(@segments, $_);
+    }
+
+    return @segments;
+}
+
+
+=pod 
+
+=item removeSegmentByIndex($index)
+
+Remove the segment indexed by $index. If it doesn't exist, nothing
+happens, if it does, all segments after this one will be moved one
+index up.
+
+=cut
+sub removeSegmentByIndex {
+
+    my ($self, $index) = @_;
+
+    ($index < @{ $self->{SEGMENTS} }) && splice( @{ $self->{SEGMENTS} }, $index, 1);
+}
+
+
+=pod
+
+=item setSegment($seg, $index)
+
+Set the segment on index. If index is out of range, or not provided,
+do nothing.
+
+=cut
+sub setSegment {
+
+    my ($self, $segment, $idx) = @_;
+
+    (! defined $idx) && return;
+    ($idx > @{ $self->{SEGMENTS} }) && return;    
+
+    @{ $self->{SEGMENTS} }[$idx] = $segment;
+}
+
+
+=pod
+
+=item getSegments()
+
+Return an array containing all segments in the right order.
+
+=cut
+sub getSegments {
+
+    my $self = shift;
+
+    return @{ $self->{SEGMENTS} };
+}
+
+
+=pod
 
 =item toString($pretty)
 
@@ -182,8 +292,8 @@ sub toString {
     my ($self, $pretty) = @_;
     my $msg = "";
 
-    foreach my $key (@{ $self->{ORDER} }) {
-	
+    foreach my $key (@{ $self->{SEGMENTS} }) {
+
 	$msg .= $key->toString();
 	$pretty ? ($msg .= "\n") : ($msg .= $SEGMENT_SEPARATOR);
     }

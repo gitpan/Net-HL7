@@ -121,6 +121,7 @@ use strict;
 
 
 =pod 
+
 =head1 NAME
 
 Net::HL7::Daemon::Client
@@ -142,9 +143,11 @@ the request that has been read by the getNextRequest() method, or if
 that hasn't been called yet, the request read from the socket. The
 latter is implemented by calling getNextRequest. If both fail,
 C<undef> is returned.
-In this case, then the I<Net::HL7::Daemon::Client>
+In case of failure, then the I<Net::HL7::Daemon::Client>
 object ($c) should be discarded, and you should not call this method
-again.  Potentially, a HL7 client can receive more than one
+again.  
+
+Potentially, a HL7 client can receive more than one
 message. So discard the client only when there's no more requests
 pending, or the delivering service might experience timeouts.
 
@@ -210,15 +213,11 @@ generated internally.
 =cut
 sub sendAck {
 
-    my $self = shift;
-    my $res  = shift;
+    my ($self, $res) = @_;
 
     # If this is true, we didn't get the incoming message yet!
     if (! ${*self}{'REQ'}) {
-	my $msg = $self->getRequest();
-
-	# No message at all!
-	$msg || return undef;
+	$self->getRequest() || return undef;
     }
 
     if (! ref $res) {
@@ -231,24 +230,27 @@ sub sendAck {
 
 =pod
 
-=item $c->sendNack($req, [$msg], [$res])
+=item $c->sendNack([$errMsg], [$res])
 
 Write a I<Net::HL7::Messages::ACK> message to the client as a
 response, with the Acknowledge Code (MSA(1)) set to CE or AE,
 depending on the original request, to signal an error.
 
-=back
-
 =cut
 sub sendNack {
 
-    my ($self, $msg, $res) = @_;    
+    my ($self, $errMsg, $res) = @_;
+
+    # If this is true, we didn't get the incoming message yet!
+    if (! ${*self}{'REQ'}) {
+	$self->getRequest() || return undef;
+    }
 
     if (! ref $res) {
 	$res = new Net::HL7::Messages::ACK(${*self}{'REQ'});
     }
 
-    $res->setAckCode("E", $msg);
+    $res->setAckCode("E", $errMsg);
 
     print $self $Net::HL7::Connection::MESSAGE_PREFIX . $res->toString() .
 	$Net::HL7::Connection::MESSAGE_SUFFIX;
@@ -260,6 +262,8 @@ sub sendNack {
 
 Write a I<Net::HL7::Reponse> object to the client as a response. This
 can hold an arbitrary HL7 message.
+
+=back
 
 =cut
 sub sendResponse {

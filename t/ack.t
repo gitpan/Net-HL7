@@ -5,7 +5,7 @@
 
 BEGIN {
 	$| = 1; 
-	print "1..6\n";
+	print "1..7\n";
 
 	unshift(@INC, "./lib");
 }
@@ -57,3 +57,7 @@ testEq(5, $ack->getSegmentByIndex(1)->getField(1), "AE");
 $ack->setAckCode("CR");
 
 testEq(6, $ack->getSegmentByIndex(1)->getField(1), "CR");
+
+$ack->setAckCode("CR", "XX");
+
+testEq(7, $ack->getSegmentByIndex(1)->getField(3), "XX");

@@ -3,7 +3,7 @@
 # File      : Segment.pm
 # Author    : Duco Dokter
 # Created   : Tue Mar  4 13:03:00 2003
-# Version   : $Id: MSH.pm,v 1.1 2003/04/04 10:50:57 wyldebeast Exp $ 
+# Version   : $Id: MSH.pm,v 1.2 2003/07/04 09:36:22 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -14,6 +14,10 @@ use 5.004;
 use strict;
 use base qw(Net::HL7::Segment);
 
+our $COMPONENT_SEPARATOR    = "^";
+our $REPETITION_SEPARATOR   = "~";
+our $ESCAPE_CHARACTER       = "\\";
+our $SUBCOMPONENT_SEPARATOR = "&";
 
 =pod
 
@@ -26,7 +30,7 @@ Net::HL7::Segments::MSH
 
 my $seg = new Net::HL7::Segments::MSH();
 
-$seg->setField(2, "^~\&");
+$seg->setField(9, "ADT^A24");
 print $seg->getField(1);
 
 =head1 DESCRIPTION
@@ -63,18 +67,23 @@ sub _init {
     $self->{FIELDS}->[0] = $name;
 
     $self->setField(1, $Net::HL7::Segment::FIELD_SEPARATOR);
-    $self->setField(2, "^~\\&");
+    $self->setField(2, "$COMPONENT_SEPARATOR$REPETITION_SEPARATOR$ESCAPE_CHARACTER$SUBCOMPONENT_SEPARATOR");
 
     return $name;
 }
 
 
+=pod
+
 =item setField($index, $value)
 
 Set the field specified by index to value. Indices start at 1, to stay
 with the HL7 standard. Trying to set the value at index 0 has no
-effect. Setting the value on index 1, will effectively change the value
-of L<Net::HL7::Segment::FIELD_SEPARATOR> for the remainder of this process.
+effect. Setting the value on index 1, will effectively change the
+value of L<Net::HL7::Segment::FIELD_SEPARATOR> for the remainder of
+this process; setting the field on index 2 will change the values of
+COMPONENT_SEPARATOR, REPETITION_SEPARATOR, ESCAPE_CHARACTER and
+SUBCOMPONENT_SEPARATOR, if the string is of length 4.
 
 =cut
 sub setField {
@@ -82,7 +91,23 @@ sub setField {
     my ($self, $index, $value) = @_;
 
     if ($index == 1) {
-	$Net::HL7::Segment::FIELD_SEPARATOR = $value;
+	if (length($value) == 1) {
+	    $Net::HL7::Segment::FIELD_SEPARATOR = $value;
+	}
+    }
+
+    if ($index == 2) {
+	if (length($value) == 4) {
+	    $value =~ /(.)(.)(.)(.)/;
+
+	    $COMPONENT_SEPARATOR    = $1;
+	    $REPETITION_SEPARATOR   = $2;
+	    $ESCAPE_CHARACTER       = $3;
+	    $SUBCOMPONENT_SEPARATOR = $4;	    
+	}
+	else {
+	    return;
+	}
     }
 
     $self->SUPER::setField($index, $value);
