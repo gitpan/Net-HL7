@@ -33,16 +33,13 @@ use Net::HL7::Connection;
 use Net::HL7::Daemon;
 
 my $msg = new Net::HL7::Message();
-my $seg1 = new Net::HL7::Segment("MSH");
-my $seg2 = new Net::HL7::Segment("PID");
+my $seg1 = new Net::HL7::Segment("PID");
 
 $seg1->setField(3, "XXX");
-$seg2->setField(2, "Foo");
 
 $msg->addSegment($seg1);
-$msg->addSegment($seg2);
 
-my $d = new Net::HL7::Daemon(Port => 12001);
+my $d = new Net::HL7::Daemon(LocalPort => 12001);
 my $clientMsg;
 
 $pid = fork();
@@ -51,7 +48,9 @@ if ($pid) {
 
 	while (my $client = $d->accept()) {
 		$clientMsg = $client->getRequest()->toString(1);
-		testEq(2, $clientMsg, "MSH|||XXX\nPID||Foo\n");
+
+		my $msh = $client->getRequest()->getSegmentByIndex(0);
+		testEq(2, $msh->getField(1), "^~\\&");
 		$client->sendAck();
 		last;
 	}
@@ -69,6 +68,6 @@ $resp = $conn->send($msg);
 
 $resp || die "No valid response";
 
-$resp->toString(1);
+$msh = $resp->getSegmentByIndex(0);
 
-testEq(3, $resp->toString(1), "MSH|ACK\n");
+testEq(3, $msh->getField(8), "ACK");

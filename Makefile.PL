@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
 	      'NAME'           => 'Net-HL7',
-	      'VERSION'        => 0.61,
+	      'VERSION'        => 0.62,
 	      'AUTHOR'         => 'D.A.Dokter <dokter@wyldebeast-wunderliebe.com>',
 	      'INSTALLDIRS'    => 'perl',
 	      'INSTALLMAN1DIR' => '$(PREFIX)/man/man1',

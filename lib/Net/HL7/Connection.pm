@@ -14,6 +14,8 @@ use 5.004;
 use strict;
 #use warnings;
 use Net::HL7::Response;
+use IO::Socket;
+
 
 =head1 NAME
 

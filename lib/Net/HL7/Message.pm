@@ -14,8 +14,12 @@ use 5.004;
 use strict;
 use warnings;
 use Net::HL7::Segment;
+use Net::HL7::Segments::MSH;
+use POSIX qw(strftime);
 
 our $SEGMENT_SEPARATOR = "\015";
+our $HL7_DATE_FORMAT   = "%Y%m%d%H%M%S";
+our $HL7_VERSION       = "2.4";
 
 =pod
 
@@ -29,9 +33,9 @@ Net::HL7::Message
 my $request = new Net::HL7::Request();
 my $conn = new Net::HL7::Connection('localhost', 8089);
 
-my $seg1 = new Net::HL7::Segment("MSH");
+my $seg1 = new Net::HL7::Segment("PID");
 
-$seg1->setField(1, "^~\\&");
+$seg1->setField(1, "foo");
 
 $request->addSegment($seg1);
 
@@ -42,6 +46,7 @@ my $response = $conn->send($request);
 
 In general one needn't create an instance of the Net::HL7::Message
 class directly, but use the L<Net::HL7::Request> class.
+The Message will be created with a MSH segment as it's first segment.
 
 =head1 METHODS
 
@@ -91,6 +96,16 @@ sub _init {
 	    $self->addSegment($seg);
 	}
     }
+    else {
+	my $msh = new Net::HL7::Segments::MSH();
+
+	$msh->setField(6, strftime($HL7_DATE_FORMAT, localtime));
+	$msh->setField(11, $HL7_VERSION);
+	$msh->setField(14, "NE");
+	$msh->setField(15, "NE");
+
+	$self->addSegment($msh);
+    }
 
     $self->{ERR} = "";
 
@@ -110,20 +125,7 @@ sub addSegment {
 
     $idx || ($idx = @{ $self->{ORDER} });
 
-    $self->{ORDER}->[$idx] = $segment->getName(0);
-    $self->{SEGMENTS}->{ $segment->getName(0) } = $segment;
-}
-
-
-=head2 getSegmentByName($segment)
-
-Return the segment specified by $segment.
-=cut 
-sub getSegmentByName {
-
-    my ($self, $segment) = @_;
-
-    return $self->{SEGMENTS}->{$segment};
+    $self->{ORDER}->[$idx] = $segment;
 }
 
 
@@ -136,7 +138,7 @@ sub getSegmentByIndex {
 
     my ($self, $index) = @_;
 
-    return $self->{SEGMENTS}->{ $self->{ORDER}->[$index]};
+    return $self->{ORDER}->[$index];
 }
 
 
@@ -145,7 +147,7 @@ sub getSegmentByIndex {
 Return a string representation of this message. This can be used to
 send over a L<Net::HL7::Connection>. To print to other output, use
 provide the $pretty argument as some true value. This will skip the
-HL7 control characters.
+HL7 control characters, and use '\n' instead.
 
 =cut
 sub toString {
@@ -155,7 +157,7 @@ sub toString {
 
     foreach my $key (@{ $self->{ORDER} }) {
 	
-	$msg .= $self->{SEGMENTS}->{$key}->toString();
+	$msg .= $key->toString();
 	$pretty ? ($msg .= "\n") : ($msg .= $SEGMENT_SEPARATOR);
     }
 

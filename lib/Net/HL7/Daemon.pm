@@ -1,193 +1,193 @@
-package Net::HL7::Daemon::Client;
-
-use Net::HL7::Request;
-use Net::HL7::Connection;
-use IO::Socket;
-
-
-sub new {
-
-    my ($class, $conn) = @_;
-
-    bless my $self= {}, $class;
-
-    $self->{CONN} = $conn;
-
-    {
-	local $/ = $Net::HL7::Connection::MESSAGE_SUFFIX;
-
-	my $buff = <$conn>;
-
-	$buff =~ s/^$Net::HL7::Connection::MESSAGE_PREFIX//;
-	$buff =~ s/$Net::HL7::Connection::MESSAGE_SUFFIX$//;
-
-	$self->{MSG} = new Net::HL7::Request($buff);
-
-	$self->{MSG} || return undef;
-    }
-    
-    return $self;
-}
-
-
-sub getRequest {
-
-    my $self = shift;
-
-    return $self->{MSG};
-}
-
-
-sub sendAck {
-
-    my $self = shift;
-
-    my $conn = $self->{CONN};
-
-    print $conn $Net::HL7::Connection::MESSAGE_PREFIX;
-    print $conn "MSH|ACK";
-    print $conn $Net::HL7::Connection::MESSAGE_SUFFIX;
-
-    $self->{CONN}->close();
-}
-
-
-sub sendNack {
-
-    my $self = shift;
-
-    my $conn = $self->{CONN};
-
-    print $conn $Net::HL7::Connection::MESSAGE_PREFIX;
-    print $conn "MSH|NACK";
-    print $conn $Net::HL7::Connection::MESSAGE_SUFFIX;
-
-    $self->{CONN}->close();
-}
-
-
 package Net::HL7::Daemon;
 
-use IO::Socket;
+use IO::Socket qw(AF_INET INADDR_ANY inet_ntoa);
+use base qw(IO::Socket::INET);
+use strict;
 
-=pod
-=head1 NAME
 
-Net::HL7::Daemon - a simple HL7 server
-
-=head1 SYNOPSIS
-
-use Net::HL7::Daemon;
-
-my $d = new Net::HL7::Daemon() || die;
-
-while (my $c = $d->accept) {
-
-    $c->close;
-    undef($c);
-}
-
-=head1 DESCRIPTION
-
-Instances of the I<Net:HL7::Daemon> class listen on a socket for
-incoming requests. 
-The accept() method will return when a connection from a client is
-available. The returned value will be a reference
-to a object of the I<Net::HL7::Daemon::Client> class. 
-
-This daemon does not fork(2) for you.  Your application, i.e. the
-user of the I<Net::HL7::Daemon> is reponsible for forking if that is
-desirable.
-
-=head1 METHODS
-
-The I<Net::HL7::Daemon> class provides the following methods:
-
-=head2 new([%args]) 
-
-= $d = new(%args)
-
-The constructor takes any parameters that can also be passed to
-IO::Socket.
-
-$d = new Net::HL7::Daemon(
-    LocalPort => 12001,
-    Listen    => 5
-)
-
-=cut
-
-sub new {
-    my ($class, %args) = @_;
-    
-    $args{Listen}   ||= SOMAXCONN;
-    $args{Proto}      = "tcp";
-    $args{LocalPort}||= 12001;
-    $args{Reuse}      = 1;
-    $args{Type}       = SOCK_STREAM;
-	  
-    bless my $self = {}, $class;
-    
-    $self->{SOCK} = IO::Socket::INET->new(%args) || return undef;
-
-    return $self;
+sub new
+{
+    my($class, %args) = @_;
+    $args{Listen} ||= 5;
+    $args{Proto}  ||= 'tcp';
+    return $class->SUPER::new(%args);
 }
 
 
-=head2 $c = $d->accept()
+=item $c = $d->accept([$pkg])
 
 This method is the same as I<IO::Socket::accept> but returns an
-I<Net::HL7::Daemon::Client> reference.  It returns undef if you
-specify a timeout for the daemon and no connection is made within that
-time.
+I<Net::HL7::Daemon::Client> reference.  It returns undef if
+you specify a timeout and no connection is made within that time.  In
+a scalar context the returned value will be a reference to a object of
+the I<Net::HL7::Daemon::Client> class which is another
+I<IO::Socket::INET> subclass.  In a list context a two-element array
+is returned containing the new I<Net::HL7::Daemon::Client> reference
+and the peer address; the list will be empty upon failure.
 
 =cut
 
-sub accept {
+sub accept
+{
+    my $self = shift;
+    
+    my ($sock, $peer) = $self->SUPER::accept("Net::HL7::Daemon::Client");
+    if ($sock) {
+        ${*$sock}{'hl7d'} = $self;
+        return wantarray ? ($sock, $peer) : $sock;
+    } else {
+        return;
+    }
+}
+
+
+=item $d->getHost()
+
+Returns the host where this daemon can be reached
+
+=cut
+
+sub getHost
+{
+    my $self = shift;
+    
+    my $addr = $self->sockaddr;
+    if (!$addr || $addr eq INADDR_ANY) {
+ 	require Sys::Hostname;
+ 	return lc(Sys::Hostname::hostname());
+    }
+    else {
+	return gethostbyaddr($addr, AF_INET) || inet_ntoa($addr);
+    }
+}
+
+
+=item $d->getPort()
+
+Returns the port on which this daemon is listening
+
+=cut
+
+sub getPort {
 
     my $self = shift;
 
-    my $conn = $self->{SOCK}->accept();
-
-    return new Net::HL7::Daemon::Client($conn);
+    return $self->sockport;
 }
 
 
-1;
+package Net::HL7::Daemon::Client;
+
+use IO::Socket;
+use base qw(IO::Socket::INET);
+use Net::HL7::Request;
+use Net::HL7::Messages::ACK;
+use Net::HL7::Messages::NACK;
+use Net::HL7::Connection;
+use strict;
 
 
 =pod 
 =head1 NAME
 
-Net::HL7::Daemon::Client
+=head1 DESCRIPTION
 
+The I<Net::HL7::Daemon::Client> is also a I<IO::Socket::INET>
+subclass. Instances of this class are returned by the accept() method
+of I<Net::HL7::Daemon>.  The following additional methods are
+provided:
 
-=head1 SYNOPSIS
+=over 4
 
-my $d = new Net::HL7::Daemon();
+=item $c->getMessage()
 
-while (my $client = $d->accept()) {
+Read data from the socket and turn it into an I<Net::HL7::Request>
+object which is then returned.  It returns C<undef> if reading of the
+request fails.  If it fails, then the I<Net::HL7::Daemon::Client>
+object ($c) should be discarded, and you should not call this method
+again.
 
-    my $msg = $client->getRequest();
-    $client->sendAck();
+=cut
+
+sub getRequest
+{
+    my $self = shift;
+
+    ${*self}{'MSG'} && return ${*self}{'MSG'};
+
+    {
+	local $/ = $Net::HL7::Connection::MESSAGE_SUFFIX;
+
+	my $buff = <$self>;
+
+	$buff =~ s/^$Net::HL7::Connection::MESSAGE_PREFIX//;
+	$buff =~ s/$Net::HL7::Connection::MESSAGE_SUFFIX$//;
+
+	${*self}{'MSG'} = new Net::HL7::Request($buff);
+
+	${*self}{'MSG'} || return undef;
+    }
+
+    return ${*self}{'MSG'};
 }
 
 
-=head1 DESCRIPTION
+=item $c->sendAck()
 
-The I<Net::HL7::Daemon::Client> class provides a handler for incoming
-HL7 requests. The client holds the message that came in, if it was
-valid HL7, and can be used to send either an acknowledgement, or an
-error back to the caller.
-
-
-=head1 METHODS
-
-=head2 new()
-
-
-=head2 getRequest()
-
-Return a reference to a Net::HL7::Request object.
+Write a I<Net::HL7::Messages::ACK> object to the client as a response.
 
 =cut
+
+sub sendAck {
+
+    my $self = shift;
+    my $res  = shift;
+
+    if (! ref $res) {
+	$res = new Net::HL7::Messages::ACK($self->getRequest());
+    }
+
+    print $self $Net::HL7::Connection::MESSAGE_PREFIX;
+    print $self $res->toString();
+    print $self $Net::HL7::Connection::MESSAGE_SUFFIX;
+}
+
+
+=item $c->sendNack()
+
+Write a I<Net::HL7::Messages::NACK> object to the client as a response.
+
+=cut
+
+sub sendNack {
+
+    my $self = shift;
+    my $res  = shift;
+
+    if (! ref $res) {
+	$res = new Net::HL7::Messages::ACK();
+    }
+
+    print $self $Net::HL7::Connection::MESSAGE_PREFIX;
+    print $self $res->toString();
+    print $self $Net::HL7::Connection::MESSAGE_SUFFIX;
+}
+
+
+=pod
+=head1 SEE ALSO
+
+RFC 2068
+
+L<IO::Socket::INET>
+
+=head1 COPYRIGHT
+
+Copyright 2003, D.A.Dokter
+
+This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+=cut
+
+1;

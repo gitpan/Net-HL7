@@ -6,18 +6,40 @@
 
 Contents
 --------
+
 1.0 Description
 2.0 History
+
 
 1.0 Description
 ---------------
 
 This is the Perl HL7 API. It is a very simple, but rather flexible API
-for use in Perl applications.
+for use in Perl applications.  Development is in full progress, so
+please bear with me for the moment, while I test the API in real
+situations, and converge on a basic API that provides the stuff you
+meet in real HL7-life.
 
 
 2.0 History
 -----------
+version 0.62:
+* Fixed erroneous read of input buffer for Client
+* Added ACK, NACK messages
+* Added MSH segment
+* getSegmentByName is removed
+* Made the Daemon and the Client inherit from IO::Socket, so you can more 
+  easy do things with forking and other server operations you would 
+  perform on sockets.
+* Made several constructors set segments and values, like auto-adding the
+  MSH segment to every instance of Message.
+
+version 0.61:
+* Moved the stuff to a new namespace (Net::HL7)
+* Created a Daemon, resembling the HTTP::Daemon
+* Created the Request and Response classes
+* added tests
+
 version 0.5:
 * Added the getField method to HL7::Message
 * repaired broken message parse for HL7::Message constructor
