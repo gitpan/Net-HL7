@@ -1,3 +1,13 @@
+################################################################################
+#
+# File      : Daemon.pm
+# Author    : D.A.Dokter
+# Created   : Mon Nov 11 17:43:16 2002
+# Version   : $Id: Daemon.pm,v 1.12 2004/02/02 11:43:13 wyldebeast Exp $
+# Copyright : Wyldebeast & Wunderliebe
+#
+################################################################################
+
 package Net::HL7::Daemon;
 
 use IO::Socket qw(AF_INET INADDR_ANY inet_ntoa);
@@ -17,19 +27,19 @@ my $d = new Net::HL7::Daemon( LocalPort => 12002, Listen => 5 );
 =head1 DESCRIPTION
 
 The Net::HL7::Daemon class provides a Daemon, roughly based on the
-well known HTTP::Daemon class. The daemon wraps IO::Socket::INET so
-that incoming connections are returned as Net::HL7::Daemon::Client
-objects. Other than that the Daemon class doesn't do all that
-much. However, this allows you to use the Daemon class as a base for
-more elaborate servers, like preforking or multi-threaded servers. See
-the Perl Cookbook for examples on this, and think Net::HL7::Daemon
-where you see IO::Socket.
+well known HTTP::Daemon class. The daemon wraps
+L<IO::Socket::INET|IO::Socket::INET> so that incoming connections are
+returned as Net::HL7::Daemon::Client objects. Other than that the
+Daemon class doesn't do all that much. However, this allows you to use
+the Daemon class as a base for more elaborate servers, like preforking
+or multi-threaded servers. See the Perl Cookbook for examples on this,
+and think Net::HL7::Daemon where you see IO::Socket.
 
 =head1 METHODS
 
 =over 4
 
-=item $d = new Net::HL7::Daemon()
+=item B<$d = new Net::HL7::Daemon()>
 
 Create a new instance of the Daemon class. Arguments are the same as
 for the IO::Socket::INET. Default settings are: Listen = SOMAXCONN,
@@ -47,7 +57,7 @@ sub new
 
 =pod
 
-=item $c = $d->accept([$pkg])
+=item B<accept([$pkg])>
 
 This method is the same as I<IO::Socket::accept> but returns an
 I<Net::HL7::Daemon::Client> reference.  It returns undef if
@@ -74,7 +84,7 @@ sub accept
 
 =pod
 
-=item $d->getHost()
+=item B<getHost()>
 
 Returns the host where this daemon can be reached.
 
@@ -95,7 +105,7 @@ sub getHost
 
 =pod
 
-=item $d->getPort()
+=item B<getPort()>
 
 Returns the port on which this daemon is listening.
 
@@ -136,7 +146,7 @@ of I<Net::HL7::Daemon>.
 
 =over 4
 
-=item $c->getRequest()
+=item B<getRequest()>
 
 Get the current request on this client. The current request is either
 the request that has been read by the getNextRequest() method, or if
@@ -164,7 +174,7 @@ sub getRequest
 
 =pod
 
-=item $c->getNextRequest()
+=item B<getNextRequest()>
 
 Read data from the socket and turn it into an I<Net::HL7::Request>
 object which is then returned.  It returns C<undef> if reading of the
@@ -203,7 +213,7 @@ sub getNextRequest
 
 =pod
 
-=item $c->sendAck([$res])
+=item B<sendAck([$res])>
 
 Write a I<Net::HL7::Messages::ACK> message to the client as a
 response, to signal success. You may provide your own
@@ -230,7 +240,7 @@ sub sendAck {
 
 =pod
 
-=item $c->sendNack([$errMsg], [$res])
+=item B<sendNack([$errMsg], [$res])>
 
 Write a I<Net::HL7::Messages::ACK> message to the client as a
 response, with the Acknowledge Code (MSA(1)) set to CE or AE,
@@ -258,7 +268,7 @@ sub sendNack {
 
 =pod
 
-=item $c->sendResponse($res)
+=item B<sendResponse($res)>
 
 Write a I<Net::HL7::Reponse> object to the client as a response. This
 can hold an arbitrary HL7 message.

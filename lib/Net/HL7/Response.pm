@@ -3,7 +3,7 @@
 # File      : Response.pm
 # Author    : Duco Dokter
 # Created   : Tue Mar  4 13:03:00 2003
-# Version   : $Id: Response.pm,v 1.1.1.1 2003/03/25 13:12:08 wyldebeast Exp $ 
+# Version   : $Id: Response.pm,v 1.2 2004/02/10 14:31:54 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -26,7 +26,8 @@ Net::HL7::Response
 
 =head1 SYNOPSIS
 
-In general, this object is created by the L<Net::HL7::Connection>, like:
+In general, this object is created by the
+L<Net::HL7::Connection|Net::HL7::Connection>, like:
 
 my $conn = new Net::HL7::Connection('localhost', 8089);
 my $request = new Net::HL7::Request();
@@ -38,14 +39,14 @@ my $response = $conn->send($request);
 
 =head1 DESCRIPTION
 
-The Net::HL7::Response class is an implementation of the
-L<Net::HL7::Message> class. In general, it is not necessary to create
-instances of this class directly, since it will be created by the
-Connection or Daemon when necessary.
+The Net::HL7::Response class extends the
+L<Net::HL7::Message|Net::HL7::Message> class. In general, it is not
+necessary to create instances of this class directly, since it will be
+created by the Connection or Daemon when necessary.
 
 =head1 METHODS
 
-See L<Net::HL7::Message>.
+See L<Net::HL7::Message|Net::HL7::Message>.
 
 =head1 AUTHOR
 

@@ -3,7 +3,7 @@
 # File      : Connection.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:43:16 2002
-# Version   : $Id: Connection.pm,v 1.2 2003/03/28 10:23:48 wyldebeast Exp $ 
+# Version   : $Id: Connection.pm,v 1.4 2004/02/02 11:43:13 wyldebeast Exp $ 
 # Copyright : D.A.Dokter
 #
 ################################################################################
@@ -43,9 +43,9 @@ $conn->close();
 The Net::HL7::Connection object represents the tcp connection to the
 HL7 message broker. The Connection has only two useful methods (apart
 from the constructor), send and close. The 'send' method takes a
-Net::HL7::Request as argument, and returns a Net::HL7::Response. The
-send method can be used more than once, before the connection is
-closed.
+L<Net::HL7::Request|Net::HL7::Request> as argument, and returns a
+L<Net::HL7::Response|Net::HL7::Response>. The send method can be used
+more than once, before the connection is closed.
 
 =head1 FIELDS
 
@@ -122,9 +122,10 @@ sub _connect {
 
 =pod
 
-=item B<$c-E<gt>send($request)>
+=item B<send($request)>
 
-Sends a Net::HL7::Connection object over this connection.
+Sends a L<Net::HL7::Request|Net::HL7::Request> object over this
+connection.
 
 =cut
 
@@ -161,7 +162,7 @@ sub send {
 
 =pod
 
-=item B<$c-E<gt>close()>
+=item B<close()>
 
 Close the connection.
 

@@ -3,7 +3,7 @@
 # File      : Request.pm
 # Author    : Duco Dokter
 # Created   : Tue Mar  4 13:03:00 2003
-# Version   : $Id: Request.pm,v 1.1.1.1 2003/03/25 13:12:08 wyldebeast Exp $ 
+# Version   : $Id: Request.pm,v 1.2 2004/02/10 14:31:54 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -36,8 +36,8 @@ my $response = $conn->send($request);
 
 =head1 DESCRIPTION
 
-The Net::HL7::Request class is an implementation of the
-L<Net::HL7::Message> class.
+The Net::HL7::Request simply extends the
+L<Net::HL7::Message|Net::HL7::Message> class.
 
 =head1 METHODS
 

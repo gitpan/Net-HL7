@@ -1,111 +1,140 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl test.pl'
-
-######################### We start with some black magic to print on failure.
-
 BEGIN {
-	$| = 1; 
-	print "1..19\n";
-
 	unshift(@INC, "./lib");
-}
-
-END {
-	print "not ok 1\n" unless $loaded;
-}
-
-$loaded = 1;
-print "ok 1\n";
-
-######################### End of black magic.
-
-# util
-sub testEq {
-    local($^W) = 0;
-    my($num, $was, $expected) = @_;
-    print(($expected eq $was) ? "ok $num\n" : "not ok $num: Expected $expected, was $was\n");
-}
-
-sub testEqN {
-    local($^W) = 0;
-    my($num, $was, $expected) = @_;
-    print(($expected = $was) ? "ok $num\n" : "not ok $num: Expected $expected, was $was\n");
 }
 
 require 5.004_05;
 use Config; my $perl = $Config{'perlpath'};
-use Net::HL7::Message;
-use Net::HL7::Segment;
+use Test::More tests => 28;
+use_ok("Net::HL7::Message");
+use_ok("Net::HL7::Segment");
+use_ok("Net::HL7::Segments::MSH");
 
+# Simple constructor
+#
 my $msg = new Net::HL7::Message();
 my $seg1 = new Net::HL7::Segment("PID");
 
 $seg1->setField(2, "Foo");
-$msg->getSegmentByIndex(0)->setField(3, "XXX");
 
+$msg->addSegment(new Net::HL7::Segments::MSH());
 $msg->addSegment($seg1);
 
-testEq(2, $msg->getSegmentByIndex(0)->getName(), "MSH");
-testEq(3, $msg->getSegmentByIndex(1)->getName(), "PID");
-testEq(4, $msg->getSegmentByIndex(0)->getField(3), "XXX");
-testEq(5, $msg->getSegmentByIndex(1)->getField(2), "Foo");
+$msg->getSegmentByIndex(0)->setField(3, "XXX");
 
-$msg2 = new Net::HL7::Message("MSH|^~\\&|1\rPID|||xxx\r");
+ok($msg->getSegmentByIndex(0)->getName() eq "MSH", "Segment 0 name MSH");
+ok($msg->getSegmentByIndex(1)->getName() eq "PID", "Segment 1 name PID");
+ok($msg->getSegmentByIndex(0)->getField(3) eq "XXX", "3d field of MSH");
+ok($msg->getSegmentByIndex(1)->getField(2) eq "Foo", "2nd field of PID");
 
-testEq(6, $msg2->toString(), "MSH|^~\\&|1\rPID|||xxx\r");
-testEq(7, $msg2->toString(1), "MSH|^~\\&|1\nPID|||xxx\n");
-testEq(8, $msg2->getSegmentByIndex(0)->getField(2), "^~\\&");
+$msg = new Net::HL7::Message("MSH|^~\\&|1|\rPID|||xxx|\r");
 
-$msg3 = new Net::HL7::Message("MSH*^~\\&*1\rPID***xxx\r");
+ok($msg->toString() eq "MSH|^~\\&|1|\rPID|||xxx|\r", "String representation of message");
 
-testEq(9, $msg3->toString(), "MSH*^~\\&*1\rPID***xxx\r");
-testEq(10, $msg3->toString(1), "MSH*^~\\&*1\nPID***xxx\n");
-testEq(11, $msg3->getSegmentByIndex(0)->getField(3), "1");
+ok($msg->toString(1) eq "MSH|^~\\&|1|\nPID|||xxx|\n", "Pretty print representation of message");
+ok($msg->getSegmentByIndex(0)->getField(2) eq "^~\\&", "Encoding characters (MSH(2))");
+
+# Constructor with components and subcomponents
+#
+$msg = new Net::HL7::Message("MSH|^~\\&|1|\rPID|||xx^x&y&z^yy^zz|\r");
+
+@comps = $msg->getSegmentByIndex(1)->getField(3);
+
+ok($comps[0] eq "xx", "Composed field");
+ok($comps[1]->[1] eq "y", "Subcomposed field");
+
+# Trying different field separator
+#
+$msg = new Net::HL7::Message("MSH*^~\\&*1\rPID***xxx\r");
+
+ok($msg->toString() eq "MSH*^~\\&*1*\rPID***xxx*\r", "String representation of message with * as field separator");
+
+ok($msg->getSegmentByIndex(0)->getField(3) eq "1", "3d field of MSH");
+
+# Trying different field sep and control chars
+#
+$msg = new Net::HL7::Message("MSH*.%#\@*1\rPID***x.x\@y\@z.z\r");
+
+@comps = $msg->getSegmentByIndex(1)->getField(3);
+
+ok($comps[0] eq "x", "Composed field with . as separator");
+ok($comps[1]->[1] eq "y", "Subcomposed field with @ as separator");
+
+# Faulty constuctor
+#
+ok(! defined(new Net::HL7::Message("MSH|^~\\&*1\rPID|||xxx\r")), "Field separator not repeated");
 
 my $seg2 = new Net::HL7::Segment("XXX");
 
-$msg3->addSegment($seg2);
+$msg->addSegment($seg2);
 
-$msg3->removeSegmentByIndex(1);
+$msg->removeSegmentByIndex(1);
 
-testEq(12, $msg3->getSegmentByIndex(1)->toString(1), $seg2->toString(1));
+ok($msg->getSegmentByIndex(1)->getName() eq $seg2->getName(), "Add/remove segment");
 
 my $seg3 = new Net::HL7::Segment("YYY");
 my $seg4 = new Net::HL7::Segment("ZZZ");
 
-$msg3->insertSegment($seg3, 1);
-$msg3->insertSegment($seg4, 1);
+$msg->insertSegment($seg3, 1);
+$msg->insertSegment($seg4, 1);
 
-testEq(13, $msg3->getSegmentByIndex(3)->toString(1), $seg2->toString(1));
+ok($msg->getSegmentByIndex(3)->getName() eq $seg2->getName(), "Insert segment");
 
-$msg3->removeSegmentByIndex(1);
-$msg3->removeSegmentByIndex(1);
-
-$msg3->removeSegmentByIndex(6);
+$msg->removeSegmentByIndex(1);
+$msg->removeSegmentByIndex(1);
+$msg->removeSegmentByIndex(6);
 
 my $seg5 = new Net::HL7::Segment("ZZ1");
 
 # This shouldn't be possible
-$msg3->insertSegment($seg5, 3);
+$msg->insertSegment($seg5, 3);
 
-testEq(14, $msg3->getSegmentByIndex(3), "");
+ok(! $msg->getSegmentByIndex(3), "Erroneous insert");
 
-$msg3->insertSegment($seg5, 2);
+$msg->insertSegment($seg5, 2);
 
-testEq(15, $msg3->getSegmentByIndex(2)->toString(1), $seg5->toString(1));
+ok($msg->getSegmentByIndex(2)->getName() eq $seg5->getName(), "Insert segment");
 
-$msg3->setSegment($seg3, 2);
+$msg->setSegment($seg3, 2);
 
-testEq(16, $msg3->getSegmentByIndex(2)->toString(1), $seg3->toString(1));
+ok($msg->getSegmentByIndex(2)->getName() eq $seg3->getName(), "Set segment");
 
-$msg3->setSegment($seg5);
+$msg->setSegment($seg5);
 
-testEq(17, $msg3->getSegmentByIndex(2)->toString(1), $seg3->toString(1));
+ok($msg->getSegmentByIndex(2)->getName() eq $seg3->getName(), "Erroneous set segment");
 
-testEqN(18, $msg3->getSegmentsByName("MSH"), 1);
+ok($msg->getSegmentsByName("MSH") == 1, "Number of MSH segments");
 
 $msh2 = new Net::HL7::Segments::MSH();
 
-$msg3->addSegment($msh2);
+$msg->addSegment($msh2);
 
-testEqN(19, $msg3->getSegmentsByName("MSH"), 2);
+ok($msg->getSegmentsByName("MSH") == 2, "Added MSH segment, now two in message");
+
+
+# Fumble 'round with ctrl chars
+#
+$msg = new Net::HL7::Message();
+
+$msh = new Net::HL7::Segments::MSH([]);
+
+$msh->setField(1, "*");
+$msh->setField(2, "abcd");
+
+$msg->addSegment($msh);
+ok($msg->toString() eq "MSH*abcd*\r", "Creating separate MSH");
+
+$msh->setField(1, "|");
+$msh->setField(2, "^~\\&");
+
+ok($msg->toString() eq "MSH|^~\\&|\r", "Change MSH after add");
+
+$msh = new Net::HL7::Segments::MSH([]);
+
+$msh->setField(1, "*");
+$msh->setField(2, "abcd");
+$msg->setSegment($msh, 0);
+
+ok($msg->toString() eq "MSH*abcd*\r", "New MSH with setSegment");
+
+
+

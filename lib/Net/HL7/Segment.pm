@@ -3,7 +3,7 @@
 # File      : Segment.pm
 # Author    : Duco Dokter
 # Created   : Tue Mar  4 13:03:00 2003
-# Version   : $Id: Segment.pm,v 1.7 2003/11/25 13:33:30 wyldebeast Exp $ 
+# Version   : $Id: Segment.pm,v 1.12 2004/02/10 14:31:54 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -12,11 +12,9 @@ package Net::HL7::Segment;
 
 use 5.004;
 use strict;
-use Net::HL7::Segments::MSH;
+use Net::HL7::Message;
+#use Net::HL7::Segments::CtrlImpl;
 
-
-our $FIELD_SEPARATOR = "|";
-our $NULL = "\"\"";
 
 =pod
 
@@ -40,12 +38,17 @@ The Net::HL7::Segment class represents segments of the HL7 message.
 
 =over 4
 
-=item new($name)
+=item B<$seg = new Net::HL7::Segment($name, [$fields])>
 
-Create an instance of this segment. The field separator defaults to
-'|'. If the name is not given, no segment is created. The segment name
-should be three characters long, and upper case. If it isn't, no
-segment is created.
+Create an instance of this segment. A segment may be created with just
+a name or a name and a reference to an array of field values. If the
+name is not given, no segment is created. The segment name should be
+three characters long, and upper case. If it isn't, no segment is
+created, and undef is returned.  If a reference to an array is given,
+all fields will be filled from that array. Note that for composed
+fields and subcomponents, the array may hold subarrays and
+subsubarrays. Repeated fields can not be supported the same way, since
+we can't distinguish between composed fields and repeated fields.
 
 =cut
 sub new {
@@ -61,68 +64,93 @@ sub new {
 
 sub _init {
     
-    my ($self, $name) = @_;
+    my ($self, $name, $fieldsRef) = @_;
 
+    # Is the name 3 upper case characters?
+    #
     ($name && (length($name) == 3)) || return undef;
     (uc($name) eq $name) || return undef;
 
     $self->{FIELDS} = [];
 
     $self->{FIELDS}->[0] = $name;
+
+    if ($fieldsRef && ref($fieldsRef) eq "ARRAY") {
+
+	for (my $i = 0; $i < @{ $fieldsRef }; $i++) {
+	    
+	    $self->setField($i + 1, $fieldsRef->[$i]);
+	}
+    }
+
+    return 1;
 }
 
 
 =pod
 
-=item setField($index, @value)
+=item B<setField($index, $value)>
 
-Set the field specified by index to value. Indices start at 1, to stay
-with the HL7 standard. Trying to set the value at index 0 has no
-effect. If you provide more than one value, or an array of values, the
-field will effectively be set to the join of these fields with the
-Net::HL7::Segments::MSH::COMPONENT_SEPARATOR.  To set a field to the
-HL7 null value, instead of omitting a field, can be achieved with the
-Net::HL7::Segment::NULL variable, like:
+Set the field specified by index to value, and return some true value
+if the operation succeeded. Indices start at 1, to stay with the HL7
+standard. Trying to set the value at index 0 has no effect.  The value
+may also be a reference to an array (that may itself contain arrays)
+to support composed fields (and subcomponents).
 
-  $segment->setField(8, $Net::HL7::Segment::NULL);
+To set a field to the HL7 null value, instead of omitting a field, can
+be achieved with the Net::HL7::Message::NULL type, like:
+
+  $segment->setField(8, $Net::HL7::Message::NULL);
 
 This will render the field as the double quote ("").
+If values are not provided at all, the method will just return.
 
 =cut
 sub setField {
 
-    my ($self, $index, @value) = @_;
-
-    for (my $i = @{ $self->{FIELDS} }; $i < $index ; $i++) {
-	$self->{FIELDS}->[$i] = "";
-    }
-
-    $index && ($self->{FIELDS}->[$index] = 
-	       join($Net::HL7::Segments::MSH::COMPONENT_SEPARATOR, @value) );
+    my ($self, $index, $value) = @_;
+    
+    return undef unless ($index and defined($value));
+    
+    $self->{FIELDS}->[$index] = $value;
+    
+    return 1;
 }
 
 
 =pod
 
-=item getField($index)
+=item B<getField($index)>
 
-Get the field at index. If the field is a composed field, you will
-need to do something like:
+Get the field at index. If the field is a composed field, you might
+ask for the result to be an array like so:
 
-@values = split($Net::HL7::Segments::MSH::REPETITION_SEPARATOR, $segment->getField(9));
+my @subfields = $seg->getField(9)
+
+otherwise the thing returned will be a reference to an array.
 
 =cut
 sub getField {
 
     my ($self, $index) = @_;
 
-    return $self->{FIELDS}->[$index];
+    if (wantarray) {
+	if (ref($self->{FIELDS}->[$index]) eq "ARRAY") {
+	    return @{ $self->{FIELDS}->[$index]};
+	}
+	else {
+	    return ($self->{FIELDS}->[$index]);
+	}
+    }
+    else {
+	return $self->{FIELDS}->[$index];
+    }
 }    
 
 
 =pod
 
-=item size()
+=item B<size()>
 
 Get the number of fields for this segment, not including the name
 
@@ -137,9 +165,11 @@ sub size {
 
 =pod
 
-=item getFields($from, $to)
+=item B<getFields([$from, [$to]])>
 
-Get the fields in the specified range.
+Get the fields in the specified range, or all if nothing specified. If
+only the 'from' value is provided, all fields from this index till the
+end of the segment will be returned.
 
 =cut
 sub getFields {
@@ -155,7 +185,7 @@ sub getFields {
 
 =pod 
 
-=item getName()
+=item B<getName()>
 
 Get the name of the segment. This is basically the value at index 0
 
@@ -167,54 +197,6 @@ sub getName {
     return $self->{FIELDS}->[0];
 }
 
-
-=pod
-
-=item setFieldSeparator($sep)
-
-Set the field separator for the segment
-
-=cut
-sub setFieldSeparator {
-
-    my ($self, $sep) = @_;
-
-    $FIELD_SEPARATOR = $sep;
-}
-
-
-=pod
-
-=item getFieldSeparator()
-
-Get the field separator for the segment
-
-=cut
-sub getFieldSeparator {
-
-    my ($self) = @_;
-
-    return $FIELD_SEPARATOR;
-}
-
-
-=pod
-
-=item toString()
-
-Return a string representation of this segment, based on the
-L<Net::HL7::Segment::FIELD_SEPARATOR> variable. This method renders a
-syntactically correct segment representation.
-
-=back
-
-=cut 
-sub toString {
-
-    my $self = shift;
-
-    return join($FIELD_SEPARATOR, @{ $self->{FIELDS} });
-}
 
 1;
 
@@ -232,4 +214,3 @@ free software; you can redistribute it and/or modify it under the same
 terms as Perl itself.
 
 =cut
-

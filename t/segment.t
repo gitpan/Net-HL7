@@ -1,92 +1,69 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl test.pl'
-
-######################### We start with some black magic to print on failure.
-
 BEGIN {
-	$| = 1; 
-	print "1..17\n";
-
 	unshift(@INC, "./lib");
 }
 
-END {
-	print "not ok 1\n" unless $loaded;
-}
-
-$loaded = 1;
-print "ok 1\n";
-
-######################### End of black magic.
-
-# util
-sub test {
-    local($^W) = 0;
-    my($num, $true, $msg) = @_;
-    print($true ? "ok $num\n" : "not ok $num: $msg\n");
-}
-
 require 5.004_05;
-use Config; my $perl = $Config{'perlpath'};
-use Net::HL7::Segment;
+use Test::More tests => 19;
+use_ok("Net::HL7::Segment");
+use_ok("Net::HL7");
 
-my $seg = new Net::HL7::Segment("MSH");
+# Basic stuff
+#
+my $seg = new Net::HL7::Segment("PID");
 $seg->setField(0, "XXX");
 $seg->setField(3, "XXX");
 
-test(2, $seg->getField(0) eq "MSH", "Field 0 is " . $seg->getField(0) . ", 
-	expected MSH"
-);
-test(3, $seg->getField(3) eq "XXX", "Field 3 is " . $seg->getField(3) . ", 
-	expected XXX"
-);
-test(4, $seg->getFieldSeparator() eq "|", "Field separator not retrieved");
+ok($seg->getField(0) eq "PID", "Field 0 is PID");
+ok($seg->getName() eq "PID", "Segment name is PID");
+ok($seg->getField(3) eq "XXX", "Field 3 is XXX");
 
-$seg->setFieldSeparator("*");
-test(5, $seg->getFieldSeparator() eq "*", 
-	"Field separator is " . $seg->getFieldSeparator() .", expected *");
-$seg->setFieldSeparator("|");
+# Try faulty constructors
+#
+ok(! defined(new Net::HL7::Segment()), "Segment constructor with no name");
+ok(! defined( new Net::HL7::Segment("XXXX")), "Segment constructor with 4 char name");
+ok(! defined(new Net::HL7::Segment("xxx")), "Segment constructor with lowercase name");
 
-test(6, $seg->getName() eq "MSH", "Name is " . $seg->getName() . ", expected MSH");
 
-test(7, $seg->toString() eq "MSH|||XXX", 
-	"Segment string is " . $seg->toString() . ", expected MSH|||XXX"
-);
+$seg = new Net::HL7::Segment("DG1", [4,3,2,[1,2,3],0]);
 
-test(8, ! defined(new Net::HL7::Segment()), "Should be undef, was $seg");
+ok($seg->getField(3) eq "2", "Constructor with array ref");
 
-test(9, ! defined( new Net::HL7::Segment("XXXX")), "Should be undef, was $seg");
+my @comps = $seg->getField(4);
 
-test(10, ! defined(new Net::HL7::Segment("xxx")), "Should be undef, was $seg");
+ok($comps[2] eq "3", "Constructor with array ref for composed fields");
 
-$seg = new Net::HL7::Segment("XXX");
 
-$seg->setField(3, 1, 2, 3);
+# Field setters/getters
+#
+$seg = new Net::HL7::Segment("DG1");
 
-test(11, $seg->getField(3) eq "1^2^3", "Field should be 1^2^3");
+$seg->setField(3, [1, 2, 3]);
+$seg->setField(8, $Net::HL7::NULL);
 
-$seg->setField(8, $Net::HL7::Segment::NULL);
+ok(ref($seg->getField(3)) eq "ARRAY", "Composed field 1^2^3");
+ok($seg->getField(8) eq "\"\"", "HL7 NULL value");
+my @subFields = $seg->getField(3);
 
-test(12, $seg->getField(8) eq "\"\"", "NULL value not correctly set");
+ok(@subFields == 3, "Getting composed fields as array");
+
+ok($subFields[1] eq "2", "Getting single value from composed field");
 
 my @flds = $seg->getFields();
 
-test(13, @flds == 9, "Length is " . @flds . ", should be 8");
+ok(@flds == 9, "Number of fields in segment");
 
 @flds = $seg->getFields(2);
 
-test(14, @flds == 7, "Length is " . @flds . ", should be 7");
+ok(@flds == 7, "Getting all fields from 2nd index");
 
 @flds = $seg->getFields(2, 4);
 
-test(15, @flds == 3, "Length is " . @flds . ", should be 3");
+ok(@flds == 3, "Getting fields from 2 till 4");
 
-my $seg1 = new Net::HL7::Segment("DG1");
+$seg->setField(12);
 
-test(16, $seg1->getField(0) eq "DG1", "Field 0 is " . $seg1->getField(0) . ", 
-	expected DG1"
-);
+ok($seg->size() == 8, "Size operator");
 
-$seg1->setField(12, "");
+$seg->setField(12, "x");
 
-test(17, $seg1->size() == 12, "Size is " . $seg1->size() . ", expected 12");
+ok($seg->size() == 12, "Size operator");

@@ -1,69 +1,51 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl test.pl'
-
-######################### We start with some black magic to print on failure.
-
 BEGIN {
-	$| = 1; 
-	print "1..11\n";
-
 	unshift(@INC, "./lib");
 }
 
-END {
-	print "not ok 1\n" unless $loaded;
-}
-
-$loaded = 1;
-print "ok 1\n";
-
-######################### End of black magic.
-
-# util
-sub testEq {
-    local($^W) = 0;
-    my($num, $was, $expected) = @_;
-    print(($expected eq $was) ? "ok $num\n" : "not ok $num: Expected $expected, was $was\n");
-}
-
 require 5.004_05;
-use Config; my $perl = $Config{'perlpath'};
-use Net::HL7::Message;
-use Net::HL7::Segment;
-use Net::HL7::Messages::ACK;
+use Test::More tests => 16;
+use_ok("Net::HL7::Message");
+use_ok("Net::HL7::Segment");
+use_ok("Net::HL7::Messages::ACK");
+use_ok("Net::HL7::Segments::MSH");
 
 
 my $msg = new Net::HL7::Message();
+$msg->addSegment(new Net::HL7::Segments::MSH());
+
 my $msh = $msg->getSegmentByIndex(0);
+$msh->setField(15, "AL");
+$msh->setField(16, "NE");
 
 my $ack = new Net::HL7::Messages::ACK($msg);
 
-testEq(2, $ack->getSegmentByIndex(1)->getField(1), "CA");
+ok($ack->getSegmentByIndex(1)->getField(1) eq "CA", "Error code is CA");
 
 $msh->setField(15, "");
 $ack = new Net::HL7::Messages::ACK($msg);
 
-testEq(3, $ack->getSegmentByIndex(1)->getField(1), "CA");
+ok($ack->getSegmentByIndex(1)->getField(1) eq "CA", "Error code is CA");
 
 $msh->setField(16, "");
 $ack = new Net::HL7::Messages::ACK($msg);
 
-testEq(4, $ack->getSegmentByIndex(1)->getField(1), "AA");
+ok($ack->getSegmentByIndex(1)->getField(1) eq "AA", "Error code is AA");
 
 $ack->setAckCode("E");
 
-testEq(5, $ack->getSegmentByIndex(1)->getField(1), "AE");
+ok($ack->getSegmentByIndex(1)->getField(1) eq "AE", "Error code is AE");
 
 $ack->setAckCode("CR");
 
-testEq(6, $ack->getSegmentByIndex(1)->getField(1), "CR");
+ok($ack->getSegmentByIndex(1)->getField(1) eq "CR", "Error code is CR");
 
 $ack->setAckCode("CR", "XX");
 
-testEq(7, $ack->getSegmentByIndex(1)->getField(3), "XX");
+ok($ack->getSegmentByIndex(1)->getField(3) eq "XX", "Set message and code");
 
 
 $msg = new Net::HL7::Message();
+$msg->addSegment(new Net::HL7::Segments::MSH());
 $msh = $msg->getSegmentByIndex(0);
 
 $msh->setField(16, "NE");
@@ -73,11 +55,13 @@ $msh->setField(15, "NE");
 
 $ack = new Net::HL7::Messages::ACK($msg);
 
+ok($ack->getSegmentByIndex(0)->getField(11) eq "P", "Field 11 is P");
+ok($ack->getSegmentByIndex(0)->getField(12) eq "2.4", "Field 12 is 2.4");
+ok($ack->getSegmentByIndex(0)->getField(15) eq "NE", "Field 15 is NE");
+ok($ack->getSegmentByIndex(0)->getField(16) eq "NE", "Field 16 is NE");
 
-testEq(8, $ack->getSegmentByIndex(0)->getField(11), "P");
+$ack = new Net::HL7::Messages::ACK($msg);
+$ack->setErrorMessage("Some error");
 
-testEq(9, $ack->getSegmentByIndex(0)->getField(12), "2.4");
-
-testEq(10, $ack->getSegmentByIndex(0)->getField(15), "NE");
-
-testEq(11, $ack->getSegmentByIndex(0)->getField(16), "NE");
+ok($ack->getSegmentByIndex(1)->getField(3) eq "Some error", "Setting error message");
+ok($ack->getSegmentByIndex(1)->getField(1) eq "CE", "Code CE after setting message");

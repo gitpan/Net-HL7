@@ -3,7 +3,7 @@
 # File      : ACK.pm
 # Author    : Duco Dokter
 # Created   : Wed Mar 26 22:40:19 2003
-# Version   : $Id: ACK.pm,v 1.5 2003/11/25 13:33:30 wyldebeast Exp $ 
+# Version   : $Id: ACK.pm,v 1.7 2004/02/10 14:31:54 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -26,24 +26,42 @@ Net::HL7::Messages::ACK
 
 =head1 SYNOPSIS
 
+$ack = new Net::HL7::Messages::ACK($request);
+
+
 =head1 DESCRIPTION
+
+Convenience module implementing an acknowledgement (ACK) message. This
+can be used in HL7 servers to create an acknowledgement for an
+incoming message.
+
 
 =head1 METHODS
 
 =over 4
 
 =cut
-
 sub _init {
 
     my ($self, $req) = @_;
 
-    $self->SUPER::_init($req->getSegmentByIndex(0)->toString(1));
+    $self->SUPER::_init();
 
-    my $msa = new Net::HL7::Segment("MSA");
-    my $reqMsh;
+    my ($reqMsh, $msh);
 
     $req && ($reqMsh = $req->getSegmentByIndex(0));
+
+    if ($reqMsh) {
+
+	my @flds = $req->getSegmentByIndex(0)->getFields(1);
+	
+	$msh = new Net::HL7::Segments::MSH(\@flds);
+    }
+    else {
+	$msh = new Net::HL7::Segments::MSH();
+    }
+
+    my $msa = new Net::HL7::Segment("MSA");
 
     # Determine acknowledge mode: normal or enhanced
     #
@@ -56,9 +74,8 @@ sub _init {
 	$msa->setField(1, "AA");
     }
 
+    $self->addSegment($msh);
     $self->addSegment($msa);
-
-    my $msh = $self->getSegmentByIndex(0);
 
     $msh->setField(9, "ACK");
 
@@ -79,7 +96,7 @@ sub _init {
 
 =pod
 
-=item $ack->setAckCode($code, [$msg])
+=item B<setAckCode($code, [$msg])>
 
 Set the acknowledgement code for the acknowledgement. Code should be
 one of: A, E, R. Codes can be prepended with C or A, denoting enhanced
@@ -107,6 +124,23 @@ sub setAckCode {
 
     $self->getSegmentByIndex(1)->setField(1, $code);
     $msg && $self->getSegmentByIndex(1)->setField(3, $msg);
+}
+
+
+=pod 
+
+=item B<setErrorMessage($errMsg)>
+
+Set the error message for the acknowledgement. This will also set the
+error code to either AE or CE, depending on the mode of the incoming
+message.
+
+=cut
+sub setErrorMessage {
+
+    my ($self, $msg) = @_;
+
+    $self->setAckCode("E", $msg);
 }
 
 

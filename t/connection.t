@@ -1,83 +1,61 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl test.pl'
-
-######################### We start with some black magic to print on failure.
-
 BEGIN {
-	$| = 1; 
-	print "1..3\n";
-
-	unshift(@INC, "./lib");
-}
-
-END {
-	print "not ok 1\n" unless $loaded;
-}
-
-$loaded = 1;
-print "ok 1\n";
-
-######################### End of black magic.
-
-# util
-sub testEq {
-    local($^W) = 0;
-    my($num, $was, $expected) = @_;
-    print(($expected eq $was) ? "ok $num\n" : "not ok $num: Expected $expected, was $was\n");
+    unshift(@INC, "./lib");
 }
 
 require 5.004_05;
-use Config; my $perl = $Config{'perlpath'};
-use Net::HL7::Message;
-use Net::HL7::Connection;
-use Net::HL7::Daemon;
+use Test::More tests => 7;
+use_ok("Net::HL7::Message");
+use_ok("Net::HL7::Connection");
+use_ok("Net::HL7::Daemon");
+use_ok("Net::HL7::Segments::MSH");
 
-my $msg = new Net::HL7::Message();
+my $msg  = new Net::HL7::Message();
+$msg->addSegment(new Net::HL7::Segments::MSH());
+
 my $seg1 = new Net::HL7::Segment("PID");
 
 $seg1->setField(3, "XXX");
 
 $msg->addSegment($seg1);
 
-my $d = new Net::HL7::Daemon(LocalPort => 12001);
-my $clientMsg;
+# Starting daemon, listening will happen in a separate thread
+my $d = new Net::HL7::Daemon(LocalPort => 12011);
 
 $pid = fork();
 
-if ($pid) {
+if (! $pid) {
 
-	while (my $client = $d->accept()) {
-		$clientMsg = $client->getRequest();
-
-		if (not defined $clientMsg) {
-		    exit;
-		}
-
-		print $clientMsg->toString(1);
-
-		my $msh = $clientMsg->getSegmentByIndex(0);
-		testEq(2, $msh->getField(2), "^~\\&");
-		$client->sendAck();
-		last;
+    while (my $client = $d->accept()) {
+	my $clientMsg = $client->getRequest();
+	
+	if (not defined $clientMsg) {
+	    exit;
 	}
+	
+	my $msh = $clientMsg->getSegmentByIndex(0);
+	
+	$client->sendAck();
+	last;
+    }
 
-	$d->close();
-	exit;
+    $d->close();
+    exit;
 } 
 
-print "Trying to make connection\n";
+$conn = new Net::HL7::Connection("localhost", 12011);
 
-$conn = new Net::HL7::Connection("localhost", 12001);
+ok($conn, "Trying to connect") or diag ("Couldn't connect, no further tests!");
 
-$conn || die "Couldn't connect";
+$conn || exit -1;
 
 $resp = $conn->send($msg);
 
-$resp || die "No valid response";
+ok($conn, "Sending message") or diag ("Couldn't get response no further tests!");
+
+$resp || exit -1;
 
 $msh = $resp->getSegmentByIndex(0);
 
-testEq(3, $msh->getField(9), "ACK");
+ok($msh->getField(9) eq "ACK", "Checking ACK field");
 
 $conn->close();
-

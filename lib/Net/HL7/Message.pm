@@ -3,7 +3,7 @@
 # File      : Message.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:37:11 2002
-# Version   : $Id: Message.pm,v 1.9 2003/08/28 09:57:23 wyldebeast Exp $ 
+# Version   : $Id: Message.pm,v 1.11 2004/02/10 14:31:54 wyldebeast Exp $ 
 # Copyright : D.A.Dokter, Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -14,12 +14,7 @@ use 5.004;
 use strict;
 use warnings;
 use Net::HL7::Segment;
-use Net::HL7::Segments::MSH;
-use POSIX qw(strftime);
-
-our $SEGMENT_SEPARATOR = "\015";
-our $HL7_DATE_FORMAT   = "%Y%m%d%H%M%S";
-our $HL7_VERSION       = "2.4";
+use Net::HL7;
 
 =pod
 
@@ -44,19 +39,51 @@ my $response = $conn->send($request);
 =head1 DESCRIPTION
 
 In general one needn't create an instance of the Net::HL7::Message
-class directly, but use the L<Net::HL7::Request> class.
-The Message will be created with a MSH segment as it's first segment.
+class directly, but use the L<Net::HL7::Request|Net::HL7::Request>
+class. When adding segments, note that the segment index starts at 0,
+so to get the first segment, segment, do
+C<$msg-E<gt>getSegmentByIndex(0)>.
+
+The segment separator defaults to \015. To change this, set the
+variable $Net::HL7::SEGMENT_SEPARATOR.
+
 
 =head1 METHODS
 
 =over 4
 
-=item B<$m = new Net::HL7::Message([$msg])>
+=item B<$msg = new Net::HL7::Message([$msg])>
 
 The constructor takes an optional string argument that is a string
 representation of a HL7 message. If the string representation is not a
 valid HL7 message. according to the specifications, undef is returned
-instead of a new instance.
+instead of a new instance. This means that segments should be
+separated within the message with the segment separator (defaults to
+\015) or a newline, and segments should be syntactically correct.
+When using the string argument constructor, make sure that you have
+escaped any characters that would have special meaning in Perl. For
+instance (using a different subcomponent separator):
+
+    C<$msg = new Net::HL7::Message("MSH*^~\\@*1\rPID***x^x@y@z^z\r");>
+
+would actually mean
+
+    C<$msg = new Net::HL7::Message("MSH*^~\\@*1\rPID***x^x^z\r");>
+
+since '@y@z' would be interpreted as two empty arrays, so do:
+
+    C<$msg = new Net::HL7::Message("MSH*^~\\@*1\rPID***x^x\@y\@z^z\r");>
+
+instead.
+
+The control characters and field separator will take the values from
+the MSH segment, if set. Otherwise defaults will be used. Changing the
+MSH fields specifying the field separator and control characters after
+the MSH has been added to the message will result in setting these
+values for the message.
+
+If the message couldn't be created, for example due to a erroneous HL7
+message string, undef is returned.
 
 =cut
 sub new {
@@ -64,7 +91,7 @@ sub new {
     my $class = shift;
     bless my $self = {}, $class;
     
-    $self->_init(@_) || return 0;
+    $self->_init(@_) || return undef;
     
     return $self;
 }
@@ -74,71 +101,110 @@ sub _init {
 
     my ($self, $hl7str) = @_;
 
-    # We store the segments both as array and as hash, to enable quick
-    # lookup by index and name.
+    # Array holding the segments
     #
     $self->{SEGMENTS} = [];
-    $self->{SEGMENT_HASH} = {};
+
+    # Control characters and other HL7 properties
+    #
+    $self->{SEGMENT_SEPARATOR}      = $Net::HL7::SEGMENT_SEPARATOR;
+    $self->{FIELD_SEPARATOR}        = $Net::HL7::FIELD_SEPARATOR;
+    $self->{COMPONENT_SEPARATOR}    = $Net::HL7::COMPONENT_SEPARATOR;
+    $self->{SUBCOMPONENT_SEPARATOR} = $Net::HL7::SUBCOMPONENT_SEPARATOR;
+    $self->{REPETITION_SEPARATOR}   = $Net::HL7::REPETITION_SEPARATOR;
+    $self->{ESCAPE_CHARACTER}       = $Net::HL7::ESCAPE_CHARACTER;
+    $self->{HL7_VERSION}            = $Net::HL7::HL7_VERSION;
 
     # If an HL7 string is given to the constructor, parse it.
     if ($hl7str) {
 
-	foreach my $segment (split("[\n\\$SEGMENT_SEPARATOR]", $hl7str)) {
-	    
-	    $segment =~ /^([A-Z0-9]{3})(.)/;
+	my @segments = split("[\n\\" . $self->{SEGMENT_SEPARATOR} . "]", $hl7str);
 
-	    my $hdr = $1;
-	    my $sep = $2;
-	    my $i   = 0;
+	# the first segment should be the control segment
+	#
+	$segments[0] =~ /^([A-Z0-9]{3})(.)(.)(.)(.)(.)(.)/;
+
+	my ($hdr, $fldSep, $compSep, $repSep, $esc, $subCompSep, $fldSepCtrl, $ctrl) = 
+	    ($1, $2, $3, $4, $5, $6, $7);
+
+	# Check whether field separator is repeated after 4 control characters
+
+	if ($fldSep ne $fldSepCtrl) {
+
+	    return undef;
+	}
+
+	# Set field separator based on control segment
+	$self->{FIELD_SEPARATOR}        = $fldSep;
+	
+	# Set other separators
+	$self->{COMPONENT_SEPARATOR}    = $compSep; 
+	$self->{SUBCOMPONENT_SEPARATOR} = $subCompSep;
+	$self->{ESCAPE_CHARACTER}       = $esc;
+	$self->{REPETITION_SEPARATOR}   = $repSep;
+	
+	# Do all segments
+	#
+	for (my $i = 0; $i < @segments; $i++) {
+	    
+	    my @fields = split('\\' . $self->{FIELD_SEPARATOR}, $segments[$i]);
+
+	    my $name = shift(@fields);
+
+	    # Now decompose fields if necessary, into refs to arrays
+	    #
+	    for (my $j = 0; $j < @fields; $j++) {
+
+		# Skip control field
+		if ($i == 0 && $j == 0) {
+		    
+		    next;
+		}
+		
+		my @comps = split('\\' . $self->{COMPONENT_SEPARATOR}, $fields[$j]);
+		
+		for (my $k = 0; $k < @comps; $k++) {
+
+		    my @subComps = split('\\' . $self->{SUBCOMPONENT_SEPARATOR}, $comps[$k]);
+			
+		    # Make it a ref or just the value
+		    if (@subComps == 1) {
+			$comps[$k] = $subComps[0];
+		    }
+		    else {
+			$comps[$k] = \@subComps;
+		    }
+
+		}
+
+		if (@comps == 1) {
+		    $fields[$j] = $comps[0];
+		}
+		else {
+		    $fields[$j] = \@comps;
+		}
+	    }
+
 	    my $seg;
 
-	    # If it's the MSH segment (should be the first one), set field
-	    # separator to first char after MSH, and set counter to start
-	    # at 2
-	    #
-	    if ($hdr eq "MSH") {
-		$i = 2;
-		$seg = new Net::HL7::Segments::MSH();
-		$seg->setField(1, $sep);
-
-		$segment =~ s/^MSH.//;
+	    # Let's see whether it's a special segment
+            #
+	    if ( eval("require Net::HL7::Segments::$name;") ) {
+		unshift(@fields, $self->{FIELD_SEPARATOR});
+		$seg = eval{ "Net::HL7::Segments::$name"->new(\@fields); };
 	    }
 	    else {
-		$seg = new Net::HL7::Segment($hdr);
+		$seg = new Net::HL7::Segment($name, \@fields);
 	    }
-
-	    $seg || return 0;
-
-	    foreach (split("\\" . $Net::HL7::Segment::FIELD_SEPARATOR, $segment)) {
-		$seg->setField($i++, $_);
-	    }
+	    
+	    $seg || return undef;
 
 	    $self->addSegment($seg);
 	}
     }
-    else {
-	my $msh = new Net::HL7::Segments::MSH();
-
-	$msh->setField(7, strftime($HL7_DATE_FORMAT, localtime));
-
-	my $ext = rand(1);
-        $ext =~ s/[^0-9]//g;
-        $ext = "." . substr($ext, 1, 5);
-
-	$msh->setField(10, $msh->getField(7) . $ext);
-	$msh->setField(11, "P");
-	$msh->setField(12, $HL7_VERSION);
-	$msh->setField(15, "AL");
-	$msh->setField(16, "NE");
-
-	$self->addSegment($msh);
-    }
-
-    $self->{ERR} = "";
 
     return 1;
 }
-
 
 
 =pod
@@ -146,12 +212,16 @@ sub _init {
 =item B<addSegment($segment)>
 
 Add the segment. to the end of the message. The segment should be an
-instance of L<Net::HL7::Segment>.
+instance of L<Net::HL7::Segment|Net::HL7::Segment>.
 
 =cut
 sub addSegment { 
 
     my ($self, $segment) = @_;
+
+    if (@{ $self->{SEGMENTS} } == 0) {
+	$self->_resetCtrl($segment);
+    }
 
     push( @{ $self->{SEGMENTS} }, $segment);
 }
@@ -162,8 +232,8 @@ sub addSegment {
 =item B<insertSegment($segment, $idx)>
 
 Insert the segment. The segment should be an instance of
-L<Net::HL7::Segment>. If the index is not given, the segment is added
-to the  of the message.
+L<Net::HL7::Segment|Net::HL7::Segment>. If the index is not given,
+nothing happens.
 
 =cut
 sub insertSegment {
@@ -174,8 +244,12 @@ sub insertSegment {
     ($idx > @{ $self->{SEGMENTS} }) && return;
 
     if ($idx == 0) {
+
+	$self->_resetCtrl($segment);
 	unshift(@{ $self->{SEGMENTS} }, $segment);
-    } elsif ($idx == @{ $self->{SEGMENTS} }) {
+    } 
+    elsif ($idx == @{ $self->{SEGMENTS} }) {
+
 	push(@{ $self->{SEGMENTS} }, $segment);
     }
     else {
@@ -192,7 +266,8 @@ sub insertSegment {
 
 =item B<getSegmentByIndex($index)>
 
-Return the segment specified by $index.
+Return the segment specified by $index. Segment count within the
+message starts at 0.
 
 =cut 
 sub getSegmentByIndex {
@@ -246,7 +321,9 @@ sub removeSegmentByIndex {
 =item B<setSegment($seg, $index)>
 
 Set the segment on index. If index is out of range, or not provided,
-do nothing.
+do nothing. Setting MSH on index 0 will revalidate field separator,
+control characters and hl7 version, based on MSH(1), MSH(2) and
+MSH(12).
 
 =cut
 sub setSegment {
@@ -254,9 +331,38 @@ sub setSegment {
     my ($self, $segment, $idx) = @_;
 
     (! defined $idx) && return;
-    ($idx > @{ $self->{SEGMENTS} }) && return;    
+    ($idx > @{ $self->{SEGMENTS} }) && return;
 
+    if ($segment->getName() eq "MSH" && $idx == 0) {
+
+	$self->_resetCtrl($segment);
+    }
+    
     @{ $self->{SEGMENTS} }[$idx] = $segment;
+}
+
+
+# After change of MSH, reset control fields
+#
+sub _resetCtrl {
+
+    my ($self, $segment) = @_;
+
+    if ($segment->getField(1)) {
+	$self->{FIELD_SEPARATOR} = $segment->getField(1);
+    }
+    
+    if ($segment->getField(2) =~ /(.)(.)(.)(.)/) {
+	
+	$self->{COMPONENT_SEPARATOR}    = $1;
+	$self->{REPETITION_SEPARATOR}   = $2;
+	$self->{ESCAPE_CHARACTER}       = $3;
+	$self->{SUBCOMPONENT_SEPARATOR} = $4;
+    }
+    
+    if ($segment->getField(12)) {
+	$self->{HL7_VERSION} = $segment->getField(12);
+    }
 }
 
 
@@ -280,9 +386,9 @@ sub getSegments {
 =item B<toString([$pretty])>
 
 Return a string representation of this message. This can be used to
-send over a L<Net::HL7::Connection>. To print to other output, use
-provide the $pretty argument as some true value. This will skip the
-HL7 control characters, and use '\n' instead.
+send the message over a socket to an HL7 server. To print to other
+output, use the $pretty argument as some true value. This will not use
+the default segment separator, but '\n' instead.
 
 =back
 
@@ -292,14 +398,53 @@ sub toString {
     my ($self, $pretty) = @_;
     my $msg = "";
 
-    foreach my $key (@{ $self->{SEGMENTS} }) {
+    # Make sure MSH(1) and MSH(2) are ok, even if someone has changed these 
+    # values
+    #
+    my $msh = $self->{SEGMENTS}->[0];
 
-	$msg .= $key->toString();
-	$pretty ? ($msg .= "\n") : ($msg .= $SEGMENT_SEPARATOR);
+    $self->_resetCtrl($msh);
+
+    foreach my $seg (@{ $self->{SEGMENTS} }) {
+
+	$msg .= $seg->getName() . $self->{FIELD_SEPARATOR};
+
+	{
+	    no warnings;
+
+	    foreach ($seg->getFields($seg->getName() ne "MSH"? 1 : 2)) {
+		
+		if (ref($_) eq "ARRAY") {
+		    
+		    for (my $i = 0; $i < @{ $_ }; $i++) {
+			
+			if (ref($_[$i]) eq "ARRAY") {
+			    
+			    $msg .= join($self->{SUBCOMPONENT_SEPARATOR}, @{ $_[$i] });
+			}
+			else {
+			    $msg .= $_[$i];
+			}
+			
+			if ($i < (@{ $_ } - 1)) {
+			    $msg .= $self->{COMPONENT_SEPARATOR};
+			}
+		    }
+		}
+		else {
+		    $msg .= $_;
+		}
+
+		$msg .= $self->{FIELD_SEPARATOR};
+	    }
+	}
+	
+	$pretty ? ($msg .= "\n") : ($msg .= $self->{SEGMENT_SEPARATOR});
     }
-
+    
     return $msg;
 }
+
 
 1;
 
