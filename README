@@ -139,6 +139,9 @@ POD's yourself (man perlpod).
 3.0 History
 -----------
 
+version 0.71:
+* Fixed broken MANIFEST: added lib/Net/HL7.pm
+
 version 0.70:
 * Full redesign of internal structure of the Message and Segment
   classes. Changes have been made to the toString method of the

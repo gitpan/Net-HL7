@@ -3,7 +3,7 @@
 # File      : Message.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:37:11 2002
-# Version   : $Id: Message.pm,v 1.11 2004/02/10 14:31:54 wyldebeast Exp $ 
+# Version   : $Id: Message.pm,v 1.12 2004/03/24 12:23:38 wyldebeast Exp $ 
 # Copyright : D.A.Dokter, Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -27,10 +27,13 @@ Net::HL7::Message
 my $request = new Net::HL7::Request();
 my $conn = new Net::HL7::Connection('localhost', 8089);
 
+my $msh = new Net::HL7::Segments::MSH();
+
 my $seg1 = new Net::HL7::Segment("PID");
 
 $seg1->setField(1, "foo");
 
+$request->addSegment($msh);
 $request->addSegment($seg1);
 
 my $response = $conn->send($request);
