@@ -22,6 +22,20 @@ documentation.
 
 2.0 History
 -----------
+
+version 0.68:
+* Added more documentation (this is an ongoing effort...)
+* made setField on segment accept multiple values. These are joined with
+  the component separator.
+* Added the HL7 NULL variable for the setField operation on a segment.
+* Fixes in MSH segment due to some reference interference quirks on 
+  Solaris.
+* Added size method to Segment
+* Made ACK message type copy full MSH when initialized with message, then
+  set it's own specific fields.
+* Fixed some complaints when running in strict mode on uninitialized values.
+* Fixed some tests that used undefined values.
+
 version 0.67:
 * Added COMPONENT_SEPARATOR, REPETITION_SEPARATOR, ESCAPE_CHARACTER and
   SUBCOMPONENT_SEPARATOR to the MSH segment. The setField method on this

@@ -33,7 +33,7 @@ sub testNe {
 }
 
 require 5.004_05;
-use Config; $perl = $Config{'perlpath'};
+use Config; my $perl = $Config{'perlpath'};
 use Net::HL7::Daemon;
 
 my $d = new Net::HL7::Daemon(LocalPort => 12009);

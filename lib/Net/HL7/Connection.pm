@@ -47,18 +47,11 @@ Net::HL7::Request as argument, and returns a Net::HL7::Response. The
 send method can be used more than once, before the connection is
 closed.
 
-=head1 METHODS
+=head1 FIELDS
 
-The following methods are available:
+The Connection object holds the following fields:
 
 =over 4
-
-=item B<$c = new Net::HL7::Connection( $host, $port )>
-
-Creates a connection to a HL7 server, or returns undef when a
-connection could not be established.are:
-
-=over 6
 
 =item MESSAGE_PREFIX
 
@@ -76,6 +69,19 @@ End of message signal for HL7 server. Defaults to \034\015.
 our $MESSAGE_PREFIX = "\013";
 our $MESSAGE_SUFFIX = "\034\015";
 
+
+=head1 METHODS
+
+The following methods are available:
+
+=over 4
+
+=item B<$c = new Net::HL7::Connection( $host, $port )>
+
+Creates a connection to a HL7 server, or returns undef when a
+connection could not be established.are:
+
+=cut
 
 sub new {
     

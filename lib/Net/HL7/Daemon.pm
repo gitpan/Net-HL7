@@ -32,13 +32,14 @@ where you see IO::Socket.
 =item $d = new Net::HL7::Daemon()
 
 Create a new instance of the Daemon class. Arguments are the same as
-for the IO::Socket::INET.
+for the IO::Socket::INET. Default settings are: Listen = SOMAXCONN,
+Proto = tcp, Reuse = 1.
 
 =cut
 sub new
 {
     my($class, %args) = @_;
-    $args{Listen} ||= 5;
+    $args{Listen} ||= 10;
     $args{Proto}  ||= 'tcp';
     $args{Reuse}  ||= 1;
     return $class->SUPER::new(%args);
@@ -78,7 +79,6 @@ sub accept
 Returns the host where this daemon can be reached.
 
 =cut
-
 sub getHost
 {
     my $self = shift;
@@ -157,7 +157,7 @@ sub getRequest
 {
     my $self = shift;
 
-    ${*self}{'REQ'} && return ${*self}{'REQ'};
+    ${*$self}{'REQ'} && return ${*$self}{'REQ'};
 
     return $self->getNextRequest();
 }
@@ -195,10 +195,10 @@ sub getNextRequest
 	$buff =~ s/^$Net::HL7::Connection::MESSAGE_PREFIX//;
 	$buff =~ s/$Net::HL7::Connection::MESSAGE_SUFFIX$//;
 
-	${*self}{'REQ'} = new Net::HL7::Request($buff);
+	${*$self}{'REQ'} = new Net::HL7::Request($buff);
     }
 
-    return ${*self}{'REQ'};
+    return ${*$self}{'REQ'};
 }
 
 =pod
@@ -216,12 +216,12 @@ sub sendAck {
     my ($self, $res) = @_;
 
     # If this is true, we didn't get the incoming message yet!
-    if (! ${*self}{'REQ'}) {
+    if (! ${*$self}{'REQ'}) {
 	$self->getRequest() || return undef;
     }
 
     if (! ref $res) {
-	$res = new Net::HL7::Messages::ACK(${*self}{'REQ'});
+	$res = new Net::HL7::Messages::ACK(${*$self}{'REQ'});
     }
 
     print $self $Net::HL7::Connection::MESSAGE_PREFIX . $res->toString() .
@@ -242,12 +242,12 @@ sub sendNack {
     my ($self, $errMsg, $res) = @_;
 
     # If this is true, we didn't get the incoming message yet!
-    if (! ${*self}{'REQ'}) {
+    if (! ${*$self}{'REQ'}) {
 	$self->getRequest() || return undef;
     }
 
     if (! ref $res) {
-	$res = new Net::HL7::Messages::ACK(${*self}{'REQ'});
+	$res = new Net::HL7::Messages::ACK(${*$self}{'REQ'});
     }
 
     $res->setAckCode("E", $errMsg);

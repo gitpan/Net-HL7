@@ -3,7 +3,7 @@
 # File      : Message.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:37:11 2002
-# Version   : $Id: Message.pm,v 1.8 2003/08/08 14:06:14 wyldebeast Exp $ 
+# Version   : $Id: Message.pm,v 1.9 2003/08/28 09:57:23 wyldebeast Exp $ 
 # Copyright : D.A.Dokter, Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -143,7 +143,7 @@ sub _init {
 
 =pod
 
-=item addSegment($segment)
+=item B<addSegment($segment)>
 
 Add the segment. to the end of the message. The segment should be an
 instance of L<Net::HL7::Segment>.
@@ -159,7 +159,7 @@ sub addSegment {
 
 =pod
 
-=item insertSegment($segment, $idx)
+=item B<insertSegment($segment, $idx)>
 
 Insert the segment. The segment should be an instance of
 L<Net::HL7::Segment>. If the index is not given, the segment is added
@@ -190,7 +190,7 @@ sub insertSegment {
 
 =pod 
 
-=item getSegmentByIndex($index)
+=item B<getSegmentByIndex($index)>
 
 Return the segment specified by $index.
 
@@ -205,7 +205,7 @@ sub getSegmentByIndex {
 
 =pod
 
-=item getSegmentsByName
+=item B<getSegmentsByName($name)>
 
 Return an array of all segments with the given name
 
@@ -226,7 +226,7 @@ sub getSegmentsByName {
 
 =pod 
 
-=item removeSegmentByIndex($index)
+=item B<removeSegmentByIndex($index)>
 
 Remove the segment indexed by $index. If it doesn't exist, nothing
 happens, if it does, all segments after this one will be moved one
@@ -243,7 +243,7 @@ sub removeSegmentByIndex {
 
 =pod
 
-=item setSegment($seg, $index)
+=item B<setSegment($seg, $index)>
 
 Set the segment on index. If index is out of range, or not provided,
 do nothing.
@@ -262,7 +262,7 @@ sub setSegment {
 
 =pod
 
-=item getSegments()
+=item B<getSegments()>
 
 Return an array containing all segments in the right order.
 
@@ -277,7 +277,7 @@ sub getSegments {
 
 =pod
 
-=item toString($pretty)
+=item B<toString([$pretty])>
 
 Return a string representation of this message. This can be used to
 send over a L<Net::HL7::Connection>. To print to other output, use

@@ -3,7 +3,7 @@
 # File      : ACK.pm
 # Author    : Duco Dokter
 # Created   : Wed Mar 26 22:40:19 2003
-# Version   : $Id: ACK.pm,v 1.4 2003/07/18 07:44:24 wyldebeast Exp $ 
+# Version   : $Id: ACK.pm,v 1.5 2003/11/25 13:33:30 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -38,7 +38,7 @@ sub _init {
 
     my ($self, $req) = @_;
 
-    $self->SUPER::_init();
+    $self->SUPER::_init($req->getSegmentByIndex(0)->toString(1));
 
     my $msa = new Net::HL7::Segment("MSA");
     my $reqMsh;
@@ -71,11 +71,6 @@ sub _init {
 	$msh->setField(4, $reqMsh->getField(6));
 	$msh->setField(5, $reqMsh->getField(3));
 	$msh->setField(6, $reqMsh->getField(4));
-	$msh->setField(10, $reqMsh->getField(10));
-	$msh->setField(11, $reqMsh->getField(11));
-	$msh->setField(12, $reqMsh->getField(12));
-	$msh->setField(15, "");
-	$msh->setField(16, "");
 	$msa->setField(2, $reqMsh->getField(10));
     }
 

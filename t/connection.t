@@ -27,7 +27,7 @@ sub testEq {
 }
 
 require 5.004_05;
-use Config; $perl = $Config{'perlpath'};
+use Config; my $perl = $Config{'perlpath'};
 use Net::HL7::Message;
 use Net::HL7::Connection;
 use Net::HL7::Daemon;

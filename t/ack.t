@@ -5,7 +5,7 @@
 
 BEGIN {
 	$| = 1; 
-	print "1..7\n";
+	print "1..11\n";
 
 	unshift(@INC, "./lib");
 }
@@ -27,7 +27,7 @@ sub testEq {
 }
 
 require 5.004_05;
-use Config; $perl = $Config{'perlpath'};
+use Config; my $perl = $Config{'perlpath'};
 use Net::HL7::Message;
 use Net::HL7::Segment;
 use Net::HL7::Messages::ACK;
@@ -61,3 +61,23 @@ testEq(6, $ack->getSegmentByIndex(1)->getField(1), "CR");
 $ack->setAckCode("CR", "XX");
 
 testEq(7, $ack->getSegmentByIndex(1)->getField(3), "XX");
+
+
+$msg = new Net::HL7::Message();
+$msh = $msg->getSegmentByIndex(0);
+
+$msh->setField(16, "NE");
+$msh->setField(11, "P");
+$msh->setField(12, "2.4");
+$msh->setField(15, "NE");
+
+$ack = new Net::HL7::Messages::ACK($msg);
+
+
+testEq(8, $ack->getSegmentByIndex(0)->getField(11), "P");
+
+testEq(9, $ack->getSegmentByIndex(0)->getField(12), "2.4");
+
+testEq(10, $ack->getSegmentByIndex(0)->getField(15), "NE");
+
+testEq(11, $ack->getSegmentByIndex(0)->getField(16), "NE");

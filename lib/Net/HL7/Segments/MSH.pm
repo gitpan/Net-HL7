@@ -3,7 +3,7 @@
 # File      : Segment.pm
 # Author    : Duco Dokter
 # Created   : Tue Mar  4 13:03:00 2003
-# Version   : $Id: MSH.pm,v 1.2 2003/07/04 09:36:22 wyldebeast Exp $ 
+# Version   : $Id: MSH.pm,v 1.4 2003/10/03 07:37:40 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -38,44 +38,34 @@ print $seg->getField(1);
 The Net::HL7::Segments::MSH is an implementation of the
 L<Net::HL7::Segment> class. The segment is a bit different from other
 segments, in that the first field is the field delimiter after the
-segment name. Other fields thus start counting from 2!
+segment name. Other fields thus start counting from 2!  The setting
+for the field separator can be changed by the setField method on index
+1. The MSH segment also contains the default settings for field 2,
+COMPONENT_SEPARATOR, REPETITION_SEPARATOR, ESCAPE_CHARACTER and
+SUBCOMPONENT_SEPARATOR. These fields default to ^, ~, \ and &
+respectively.
+
 
 =head1 METHODS
 
 =over 3
 
-=item new Net::HL7::Segments::MSH()
-
-This constructor takes no arguments.
-
 =cut
-sub new {
-    
-    my $class = shift;
-    bless my $self = {}, $class;
-    
-    $self->_init("MSH") || return 0;
-    
-    return $self;
-}
-
-
 sub _init {
     
-    my ($self, $name) = @_;
-
-    $self->{FIELDS}->[0] = $name;
+    my ($self) = @_;
+    $self->SUPER::_init("MSH");
 
     $self->setField(1, $Net::HL7::Segment::FIELD_SEPARATOR);
     $self->setField(2, "$COMPONENT_SEPARATOR$REPETITION_SEPARATOR$ESCAPE_CHARACTER$SUBCOMPONENT_SEPARATOR");
 
-    return $name;
+    return $self;
 }
 
 
 =pod
 
-=item setField($index, $value)
+=item B<setField($index, $value)>
 
 Set the field specified by index to value. Indices start at 1, to stay
 with the HL7 standard. Trying to set the value at index 0 has no
@@ -94,6 +84,10 @@ sub setField {
 	if (length($value) == 1) {
 	    $Net::HL7::Segment::FIELD_SEPARATOR = $value;
 	}
+	else {
+	    return;
+	}
+
     }
 
     if ($index == 2) {
@@ -103,7 +97,7 @@ sub setField {
 	    $COMPONENT_SEPARATOR    = $1;
 	    $REPETITION_SEPARATOR   = $2;
 	    $ESCAPE_CHARACTER       = $3;
-	    $SUBCOMPONENT_SEPARATOR = $4;	    
+	    $SUBCOMPONENT_SEPARATOR = $4;
 	}
 	else {
 	    return;
@@ -114,7 +108,9 @@ sub setField {
 }
 
 
-=item toString()
+=pod
+
+=item B<toString()>
 
 Return a string representation of this segment, based on the
 L<Net::HL7::Segment::FIELD_SEPARATOR> variable.
@@ -125,15 +121,12 @@ L<Net::HL7::Segment::FIELD_SEPARATOR> variable.
 sub toString {
 
     my $self = shift;
-
-    my @list = @{ $self->{FIELDS} };
-
-    splice(@list, 1, 1);
-
-    return join($Net::HL7::Segment::FIELD_SEPARATOR, @list);
+    
+    return join($Net::HL7::Segment::FIELD_SEPARATOR, "MSH", $self->getFields(2));
 }
 
 1;
+
 
 =head1 AUTHOR
 

@@ -17,3 +17,4 @@ Makefile.PL
 INSTALL
 LICENSE
 README
+META.yml                                 Module meta-data (added by MakeMaker)

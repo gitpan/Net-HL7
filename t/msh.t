@@ -27,7 +27,7 @@ sub testEq {
 }
 
 require 5.004_05;
-use Config; $perl = $Config{'perlpath'};
+use Config; my $perl = $Config{'perlpath'};
 use Net::HL7::Segment;
 use Net::HL7::Segments::MSH;
 
