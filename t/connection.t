@@ -50,7 +50,7 @@ if ($pid) {
 		$clientMsg = $client->getRequest()->toString(1);
 
 		my $msh = $client->getRequest()->getSegmentByIndex(0);
-		testEq(2, $msh->getField(1), "^~\\&");
+		testEq(2, $msh->getField(2), "^~\\&");
 		$client->sendAck();
 		last;
 	}
@@ -70,4 +70,4 @@ $resp || die "No valid response";
 
 $msh = $resp->getSegmentByIndex(0);
 
-testEq(3, $msh->getField(8), "ACK");
+testEq(3, $msh->getField(9), "ACK");

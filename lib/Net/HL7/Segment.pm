@@ -3,7 +3,7 @@
 # File      : Segment.pm
 # Author    : Duco Dokter
 # Created   : Tue Mar  4 13:03:00 2003
-# Version   : $Id: Segment.pm,v 1.1.1.1 2003/03/25 13:12:09 wyldebeast Exp $ 
+# Version   : $Id: Segment.pm,v 1.2 2003/03/31 07:47:22 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -24,9 +24,9 @@ Net::HL7::Segment
 
 =head1 SYNOPSIS
 
-my $seg = new Net::HL7::Segment("MSH");
+my $seg = new Net::HL7::Segment("PID");
 
-$seg->setField(1, "^~\&");
+$seg->setField(3, "12345678");
 print $seg->getField(1);
 
 =head1 DESCRIPTION
@@ -35,8 +35,9 @@ The Net::HL7::Segment class represents segments of the HL7 message.
 
 =head1 METHODS
 
+=over 4
 
-=head2 new($name)
+=item new($name)
 
 Create an instance of this segment. The field separator defaults to
 '|'. If the name is not given, no segment is created.
@@ -63,7 +64,7 @@ sub _init {
 }
 
 
-=head2 setField($index, $value)
+=item setField($index, $value)
 
 Set the field specified by index to value. Indices start at 1, to stay
 with the HL7 standard. Trying to set the value at index 0 has no
@@ -79,9 +80,10 @@ sub setField {
 
 
 
-=head2 getField($index)
+=item getField($index)
 
 Get the field at index.
+
 =cut
 sub getField {
 
@@ -91,9 +93,10 @@ sub getField {
 }    
 
 
-=head2 getName()
+=item getName()
 
 Get the name of the segment. This is basically the value at index 0
+
 =cut
 sub getName {
 
@@ -103,9 +106,10 @@ sub getName {
 }
 
 
-=head2 setFieldSeparator($sep)
+=item setFieldSeparator($sep)
 
 Set the field separator for the segment
+
 =cut
 sub setFieldSeparator {
 
@@ -115,9 +119,10 @@ sub setFieldSeparator {
 }
 
 
-=head2 getFieldSeparator()
+=item getFieldSeparator()
 
 Get the field separator for the segment
+
 =cut
 sub getFieldSeparator {
 
@@ -127,10 +132,12 @@ sub getFieldSeparator {
 }
 
 
-=head2 toString()
+=item toString()
 
 Return a string representation of this segment, based on the
 L<Net::HL7::Segment::FIELD_SEPARATOR> variable.  
+
+=back
 
 =cut 
 sub toString {

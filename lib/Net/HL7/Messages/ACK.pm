@@ -30,6 +30,8 @@ Net::HL7::Messages::ACK
 
 =head1 METHODS
 
+=over 4
+
 =cut
 
 sub _init {
@@ -39,32 +41,76 @@ sub _init {
     $self->SUPER::_init();
 
     my $msa = new Net::HL7::Segment("MSA");
-    $msa->setField(1, "CA");
+    my $reqMsh;
+
+    $req && ($reqMsh = $req->getSegmentByIndex(0));
+
+    # Determine acknowledge mode: normal or enhanced
+    #
+    if ($reqMsh && ($reqMsh->getField(15) || $reqMsh->getField(16))) {
+	$self->{ACK_TYPE} = "E";
+	$msa->setField(1, "CA");
+    }
+    else {
+	$self->{ACK_TYPE} = "N";
+	$msa->setField(1, "AA");
+    }
 
     $self->addSegment($msa);
 
     my $msh = $self->getSegmentByIndex(0);
 
-    $msh->setField(8, "ACK");
+    $msh->setField(9, "ACK");
 
     # Construct an ACK based on the request
     if ($req) {
 
-	my $reqMsh = $req->getSegmentByIndex(0);
-
 	$reqMsh || last;
 
-	$msh->setField(2, $reqMsh->getField(4));
 	$msh->setField(3, $reqMsh->getField(5));
-	$msh->setField(4, $reqMsh->getField(2));
+	$msh->setField(4, $reqMsh->getField(6));
 	$msh->setField(5, $reqMsh->getField(3));
-	$msh->setField(9, $reqMsh->getField(9));
-	$msa->setField(2, $reqMsh->getField(9));
+	$msh->setField(6, $reqMsh->getField(4));
+	$msh->setField(10, $reqMsh->getField(10));
+	$msa->setField(3, $reqMsh->getField(10));
     }
 
     return 1;
 }
 
+
+=item $ack->setAckCode($code, [$msg])
+
+Set the acknowledgement code for the acknowledgement. Code should be
+one of: A, E, R. Codes can be prepended with C or A, denoting enhanced
+or normal acknowledge mode. This denotes: accept, general error and
+reject respectively. The ACK module will determine the right answer
+mode (normal or enhanced) based upon the request, if not provided.
+
+=cut
+sub setAckCode {
+
+    my ($self, $code, $msg) = @_;
+
+    my $mode = "A";
+
+    # Determine acknowledge mode: normal or enhanced
+    #
+    if ($self->{ACK_TYPE} eq "E") {
+	$mode = "C";
+    }
+
+    if (length($code) == 1) {
+	$code = "$mode$code";
+    }
+
+    $self->getSegmentByIndex(1)->setField(1, $code);
+}
+
+
+=pod 
+
+=back
 
 =head1 AUTHOR
 

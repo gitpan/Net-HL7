@@ -5,11 +5,13 @@ lib/Net/HL7/Response.pm
 lib/Net/HL7/Connection.pm
 lib/Net/HL7/Daemon.pm
 lib/Net/HL7/Messages/ACK.pm
-lib/Net/HL7/Messages/NACK.pm
 lib/Net/HL7/Segments/MSH.pm
 t/message.t
 t/segment.t
 t/connection.t
+t/daemon.t
+t/ack.t
+t/msh.t
 MANIFEST
 Makefile.PL
 INSTALL

@@ -3,7 +3,7 @@
 # File      : Connection.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:43:16 2002
-# Version   : $Id: Connection.pm,v 1.1.1.1 2003/03/25 13:12:08 wyldebeast Exp $ 
+# Version   : $Id: Connection.pm,v 1.2 2003/03/28 10:23:48 wyldebeast Exp $ 
 # Copyright : D.A.Dokter
 #
 ################################################################################

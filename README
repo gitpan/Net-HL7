@@ -23,6 +23,14 @@ meet in real HL7-life.
 
 2.0 History
 -----------
+version 0.63:
+* fixed some POD errors
+* added the sendResponse method to Net::HL7::Daemon::Client
+* Removed NACK module: it doesn't exists in the HL7 world.
+* The MSH segment now uses index 1 of it's fields for the FIELD_SEPARATOR value;
+  other fields have moved one to the right
+* added setAckCode method to ACK, to be able to set the error for the acknowledgement.
+
 version 0.62:
 * Fixed erroneous read of input buffer for Client
 * Added ACK, NACK messages

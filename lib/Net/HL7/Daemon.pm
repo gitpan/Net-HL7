@@ -4,7 +4,27 @@ use IO::Socket qw(AF_INET INADDR_ANY inet_ntoa);
 use base qw(IO::Socket::INET);
 use strict;
 
+=pod
 
+=head1 NAME
+
+Net::HL7::Daemon
+
+=head1 SYNOPSIS
+
+my $d = new Net::HL7::Daemon( LocalPort => 12002, Listen => 5 );
+
+
+=head1 METHODS
+
+=over 4
+
+=item $d = new Net::HL7::Daemon()
+
+Create a new instance of the Daemon class. Arguments are the same as
+for the IO::Socket::INET.
+
+=cut
 sub new
 {
     my($class, %args) = @_;
@@ -26,7 +46,6 @@ is returned containing the new I<Net::HL7::Daemon::Client> reference
 and the peer address; the list will be empty upon failure.
 
 =cut
-
 sub accept
 {
     my $self = shift;
@@ -66,8 +85,9 @@ sub getHost
 
 Returns the port on which this daemon is listening
 
-=cut
+=back
 
+=cut
 sub getPort {
 
     my $self = shift;
@@ -82,7 +102,6 @@ use IO::Socket;
 use base qw(IO::Socket::INET);
 use Net::HL7::Request;
 use Net::HL7::Messages::ACK;
-use Net::HL7::Messages::NACK;
 use Net::HL7::Connection;
 use strict;
 
@@ -153,20 +172,39 @@ sub sendAck {
 }
 
 
-=item $c->sendNack()
+=item $c->sendNack($req, [$msg])
 
-Write a I<Net::HL7::Messages::NACK> object to the client as a response.
+Write a I<Net::HL7::Messages::ACK> object to the client as a response,
+with the Acknowledge Code (MSA(1)) set to CE or AE.
+
+=back
+
+=cut
+sub sendNack {
+
+    my ($self, $res, $msg) = @_;    
+
+    if (! ref $res) {
+	$res = new Net::HL7::Messages::ACK($self->getRequest());
+    }
+
+    $res->setAckCode("E", $msg);
+
+    print $self $Net::HL7::Connection::MESSAGE_PREFIX;
+    print $self $res->toString();
+    print $self $Net::HL7::Connection::MESSAGE_SUFFIX;
+}
+
+
+=item $c->sendResponse($res)
+
+Write a I<Net::HL7::Reponse> object to the client as a response.
 
 =cut
 
-sub sendNack {
+sub sendResponse {
 
-    my $self = shift;
-    my $res  = shift;
-
-    if (! ref $res) {
-	$res = new Net::HL7::Messages::ACK();
-    }
+    my ($self, $res) = @_;
 
     print $self $Net::HL7::Connection::MESSAGE_PREFIX;
     print $self $res->toString();

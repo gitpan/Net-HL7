@@ -3,7 +3,7 @@
 # File      : Message.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:37:11 2002
-# Version   : $Id: Message.pm,v 1.1.1.1 2003/03/25 13:12:08 wyldebeast Exp $ 
+# Version   : $Id: Message.pm,v 1.3 2003/03/31 07:47:22 wyldebeast Exp $ 
 # Copyright : D.A.Dokter, Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -27,7 +27,6 @@ our $HL7_VERSION       = "2.4";
 
 Net::HL7::Message
 
-
 =head1 SYNOPSIS
 
 my $request = new Net::HL7::Request();
@@ -50,12 +49,15 @@ The Message will be created with a MSH segment as it's first segment.
 
 =head1 METHODS
 
-=head2 B<$m = new Net::HL7::Message()>
+=over 4
+
+=item B<$m = new Net::HL7::Message()>
 
 The constructor takes an optional string argument that is a string
 representation of a HL7 message. This makes it easy for the
 L<Net::HL7::Connection> object to return new HL7 messages from a
 server.
+
 =cut
 sub new {
     
@@ -80,12 +82,27 @@ sub _init {
 
 	foreach my $segment (split("\\" . $SEGMENT_SEPARATOR, $hl7str)) {
 	    
-	    $segment =~ /^([A-Z0-9]{3})/;
+	    $segment =~ /^([A-Z0-9]{3})(.)/;
 
 	    my $hdr = $1;
+	    my $sep = $2;
 	    my $i   = 0;
+	    my $seg;
 
-	    my $seg = new Net::HL7::Segment($hdr);
+	    # If it's the MSH segment (should be the first one), set field
+	    # separator to first char after MSH, and set counter to start
+	    # at 2
+	    #
+	    if ($hdr eq "MSH") {
+		$i = 2;
+		$seg = new Net::HL7::Segments::MSH();
+		$seg->setField(1, $sep);
+
+		$segment =~ s/^MSH.//;
+	    }
+	    else {
+		$seg = new Net::HL7::Segment($hdr);
+	    }
 
 	    $seg || return 0;
 
@@ -100,6 +117,13 @@ sub _init {
 	my $msh = new Net::HL7::Segments::MSH();
 
 	$msh->setField(6, strftime($HL7_DATE_FORMAT, localtime));
+
+	my $ext = rand(1);
+        $ext =~ s/[^0-9]//g;
+        $ext = "." . substr($ext, 1, 5);
+
+	$msh->setField(9, $msh->getField(6) . $ext);
+
 	$msh->setField(11, $HL7_VERSION);
 	$msh->setField(14, "NE");
 	$msh->setField(15, "NE");
@@ -113,11 +137,12 @@ sub _init {
 }
 
 
-=head 2 addSegment($segment, $index)
+=item addSegment($segment, $index)
 
 Set the segment at index to segment. The segment should be an instance of 
 L<Net::HL7::Segment>. If the idnex is not given, the segment is added to
 the end of the message.
+
 =cut
 sub addSegment { 
 
@@ -129,7 +154,7 @@ sub addSegment {
 }
 
 
-=head2 getSegmentByIndex($index)
+=item getSegmentByIndex($index)
 
 Return the segment specified by $index.
 
@@ -142,12 +167,14 @@ sub getSegmentByIndex {
 }
 
 
-=head2 toString($pretty)
+=item toString($pretty)
 
 Return a string representation of this message. This can be used to
 send over a L<Net::HL7::Connection>. To print to other output, use
 provide the $pretty argument as some true value. This will skip the
 HL7 control characters, and use '\n' instead.
+
+=back
 
 =cut
 sub toString {
@@ -167,96 +194,6 @@ sub toString {
 1;
 
 =pod
-
-=head1 DESCRIPTION
-
-The HL7::Message represents both the request and the answer to and
-from the HL7 broker.  The message can be constructed in two ways:
-based on a message template, and based on setting individual segment
-values. The first method goes like this:
-
-my $msg = new HL7::Message();
-
-my $tpl = "
-MSH|^~\&|ME|SYSTEM|YOU|TDM|${sysdate;%14s}||DFT^P03|${id;%16s}|P|2.4|||AL|NE|
-EVN||${sysdate;%14s}|
-";
-
-$msg->useTemplate($tpl);
-
-my $now = strftime "%Y%m%d%H%M%S", localtime;
-my $ext = rand(1);
-$ext =~ s/^0\.([0-9]{5}).*$/\.$1/;
-
-$msg->setTemplateField("sysdate", $now
-$msg->setTemplateField("id", "$now$ext");
- ...
-
-The template contains slots in the following format:
-
-${<name>;<format>}
-
-Setting a value to a name with the C<setTemplateField> method will
-replace the slot with the value formatted in the format specified, so
-for instance C<${pipo;%06s}> set with C<setTemplateField("pipo", "foo")>
-would render '000foo'. See L<sprintf> for details.
-
-The other way is to just create a new message (either with or without
-an initial header) like so:
-
-my $msg = new HL7::Message();
-
-$msg->setField("MSH", 4, strftime("%Y%m%m%H%M%S", localtime));
-
-
-Use the C<toString> method to see what the message looks like.
-
-
-=head1 METHODS
-
-=head2 setField($segment, $index, $value)
-
-Set the indexed value of segment specified by the argument. If the segment
-doesn't exist, it is created.  
-
-
-=head2 getField($segment, $index)
-
-Get the value at the specified index from segment.
-
-
-=head2 toString()
-
-Return the message as a string. The special HL7 segment terminators are
-translated into end of line characters.
-
-
-=head2 useTemplate($template)
-
-Use a template for the message. The template is a string containing
-field definitions like:
-
-C<${name;format}>
-
-The format is just like formatting strings used in C<printf>.
-
-A message template could look something like this: 
-
-MSH|^~\&|ME|SYSTEM|YOU|TDM|${sysdate;%14s}||DFT^P03|${id;%16s}|P|2.4|||AL|NE|
-EVN||${sysdate;%14s}|
-";
-
-
-=head2 setTemplateField($field, $value)
-
-Set the field specified by $field to $value. This only makes sense when
-a template is used.
-
-
-=head2 setTemplateFields(\%fields)
-
-Set the fields specified by the keys of the hashref to the values.
-
 
 =head1 AUTHOR
 

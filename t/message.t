@@ -5,7 +5,7 @@
 
 BEGIN {
 	$| = 1; 
-	print "1..8\n";
+	print "1..11\n";
 
 	unshift(@INC, "./lib");
 }
@@ -44,8 +44,14 @@ testEq(3, $msg->getSegmentByIndex(1)->getName(), "PID");
 testEq(4, $msg->getSegmentByIndex(0)->getField(3), "XXX");
 testEq(5, $msg->getSegmentByIndex(1)->getField(2), "Foo");
 
-$msg2 = new Net::HL7::Message("MSH|1|1\rPID|||xxx\r");
+$msg2 = new Net::HL7::Message("MSH|3|1\rPID|||xxx\r");
 
-testEq(6, $msg2->toString(), "MSH|1|1\rPID|||xxx\r");
-testEq(7, $msg2->toString(1), "MSH|1|1\nPID|||xxx\n");
-testEq(8, $msg2->getSegmentByIndex(0)->getField(1), "1");
+testEq(6, $msg2->toString(), "MSH|3|1\rPID|||xxx\r");
+testEq(7, $msg2->toString(1), "MSH|3|1\nPID|||xxx\n");
+testEq(8, $msg2->getSegmentByIndex(0)->getField(2), "3");
+
+$msg3 = new Net::HL7::Message("MSH*3*1\rPID***xxx\r");
+
+testEq(9, $msg3->toString(), "MSH*3*1\rPID***xxx\r");
+testEq(10, $msg3->toString(1), "MSH*3*1\nPID***xxx\n");
+testEq(11, $msg3->getSegmentByIndex(0)->getField(2), "3");
