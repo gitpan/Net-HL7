@@ -1,0 +1,26 @@
+########################################################################
+#                                                                      #
+#                               HL7 API                                #
+#                                                                      #
+########################################################################
+
+Contents
+--------
+1.0 Description
+2.0 History
+
+1.0 Description
+---------------
+
+This is the Perl HL7 API. It is a very simple, but rather flexible API
+for use in Perl applications.
+
+
+2.0 History
+-----------
+version 0.5:
+* Added the getField method to HL7::Message
+* repaired broken message parse for HL7::Message constructor
+
+version 0.4:
+* Removed spurious newline between segments.
