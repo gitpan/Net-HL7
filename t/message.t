@@ -55,3 +55,4 @@ $msg3 = new Net::HL7::Message("MSH*3*1\rPID***xxx\r");
 testEq(9, $msg3->toString(), "MSH*3*1\rPID***xxx\r");
 testEq(10, $msg3->toString(1), "MSH*3*1\nPID***xxx\n");
 testEq(11, $msg3->getSegmentByIndex(0)->getField(2), "3");
+

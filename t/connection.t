@@ -47,9 +47,15 @@ $pid = fork();
 if ($pid) {
 
 	while (my $client = $d->accept()) {
-		$clientMsg = $client->getRequest()->toString(1);
+		$clientMsg = $client->getRequest();
 
-		my $msh = $client->getRequest()->getSegmentByIndex(0);
+		if (not defined $clientMsg) {
+		    exit;
+		}
+
+		print $clientMsg->toString(1);
+
+		my $msh = $clientMsg->getSegmentByIndex(0);
 		testEq(2, $msh->getField(2), "^~\\&");
 		$client->sendAck();
 		last;

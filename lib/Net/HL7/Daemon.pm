@@ -14,6 +14,16 @@ Net::HL7::Daemon
 
 my $d = new Net::HL7::Daemon( LocalPort => 12002, Listen => 5 );
 
+=head1 DESCRIPTION
+
+The Net::HL7::Daemon class provides a Daemon, roughly based on the
+well known HTTP::Daemon class. The daemon wraps IO::Socket::INET so
+that incoming connections are returned as Net::HL7::Daemon::Client
+objects. Other than that the Daemon class doesn't do all that
+much. However, this allows you to use the Daemon class as a base for
+more elaborate servers, like preforking or multi-threaded servers. See
+the Perl Cookbook for examples on this, and think Net::HL7::Daemon
+where you see IO::Socket.
 
 =head1 METHODS
 
@@ -30,9 +40,11 @@ sub new
     my($class, %args) = @_;
     $args{Listen} ||= 5;
     $args{Proto}  ||= 'tcp';
+    $args{Reuse}  ||= 1;
     return $class->SUPER::new(%args);
 }
 
+=pod
 
 =item $c = $d->accept([$pkg])
 
@@ -59,10 +71,11 @@ sub accept
     }
 }
 
+=pod
 
 =item $d->getHost()
 
-Returns the host where this daemon can be reached
+Returns the host where this daemon can be reached.
 
 =cut
 
@@ -80,10 +93,11 @@ sub getHost
     }
 }
 
+=pod
 
 =item $d->getPort()
 
-Returns the port on which this daemon is listening
+Returns the port on which this daemon is listening.
 
 =back
 
@@ -109,22 +123,27 @@ use strict;
 =pod 
 =head1 NAME
 
+Net::HL7::Daemon::Client
+
 =head1 DESCRIPTION
 
 The I<Net::HL7::Daemon::Client> is also a I<IO::Socket::INET>
 subclass. Instances of this class are returned by the accept() method
-of I<Net::HL7::Daemon>.  The following additional methods are
-provided:
+of I<Net::HL7::Daemon>.
+
+=head1 METHODS
 
 =over 4
 
-=item $c->getMessage()
+=item $c->getRequest()
 
 Read data from the socket and turn it into an I<Net::HL7::Request>
 object which is then returned.  It returns C<undef> if reading of the
 request fails.  If it fails, then the I<Net::HL7::Daemon::Client>
 object ($c) should be discarded, and you should not call this method
-again.
+again.  Potentially, a HL7 client can receive more than one
+message. So discard the client only when there's no more requests
+pending, or the delivering service might experience timeouts.
 
 =cut
 
@@ -132,28 +151,35 @@ sub getRequest
 {
     my $self = shift;
 
-    ${*self}{'MSG'} && return ${*self}{'MSG'};
-
     {
 	local $/ = $Net::HL7::Connection::MESSAGE_SUFFIX;
 
+	# slurrrp
 	my $buff = <$self>;
 
+	if (not defined $buff) {
+	    return undef;
+	}
+
+	# Remove HL7 pre- and suffix
+	#
 	$buff =~ s/^$Net::HL7::Connection::MESSAGE_PREFIX//;
 	$buff =~ s/$Net::HL7::Connection::MESSAGE_SUFFIX$//;
 
-	${*self}{'MSG'} = new Net::HL7::Request($buff);
-
-	${*self}{'MSG'} || return undef;
+	${*self}{'REQ'} = new Net::HL7::Request($buff);
     }
 
-    return ${*self}{'MSG'};
+    return ${*self}{'REQ'};
 }
 
+=pod
 
-=item $c->sendAck()
+=item $c->sendAck([$res])
 
-Write a I<Net::HL7::Messages::ACK> object to the client as a response.
+Write a I<Net::HL7::Messages::ACK> message to the client as a
+response, to signal success. You may provide your own
+Net::HL7::Response, but it is better to rely on the ACK that is
+generated internally.
 
 =cut
 sub sendAck {
@@ -162,28 +188,30 @@ sub sendAck {
     my $res  = shift;
 
     if (! ref $res) {
-	$res = new Net::HL7::Messages::ACK($self->getRequest());
+	$res = new Net::HL7::Messages::ACK(${*self}{'REQ'});
     }
 
     print $self $Net::HL7::Connection::MESSAGE_PREFIX . $res->toString() .
 	$Net::HL7::Connection::MESSAGE_SUFFIX;
 }
 
+=pod
 
-=item $c->sendNack($req, [$msg])
+=item $c->sendNack($req, [$msg], [$res])
 
-Write a I<Net::HL7::Messages::ACK> object to the client as a response,
-with the Acknowledge Code (MSA(1)) set to CE or AE.
+Write a I<Net::HL7::Messages::ACK> message to the client as a
+response, with the Acknowledge Code (MSA(1)) set to CE or AE,
+depending on the original request, to signal an error.
 
 =back
 
 =cut
 sub sendNack {
 
-    my ($self, $res, $msg) = @_;    
+    my ($self, $msg, $res) = @_;    
 
     if (! ref $res) {
-	$res = new Net::HL7::Messages::ACK($self->getRequest());
+	$res = new Net::HL7::Messages::ACK(${*self}{'REQ'});
     }
 
     $res->setAckCode("E", $msg);
@@ -192,20 +220,20 @@ sub sendNack {
 	$Net::HL7::Connection::MESSAGE_SUFFIX;
 }
 
+=pod
 
 =item $c->sendResponse($res)
 
-Write a I<Net::HL7::Reponse> object to the client as a response.
+Write a I<Net::HL7::Reponse> object to the client as a response. This
+can hold an arbitrary HL7 message.
 
 =cut
-
 sub sendResponse {
 
     my ($self, $res) = @_;
 
-    print $self $Net::HL7::Connection::MESSAGE_PREFIX;
-    print $self $res->toString();
-    print $self $Net::HL7::Connection::MESSAGE_SUFFIX;
+    print $self $Net::HL7::Connection::MESSAGE_PREFIX . $res->toString() .
+	$Net::HL7::Connection::MESSAGE_SUFFIX;
 }
 
 

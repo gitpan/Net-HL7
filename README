@@ -1,9 +1,3 @@
-########################################################################
-#                                                                      #
-#                               HL7 API                                #
-#                                                                      #
-########################################################################
-
 Contents
 --------
 
@@ -18,11 +12,22 @@ This is the Perl HL7 API. It is a very simple, but rather flexible API
 for use in Perl applications.  Development is in full progress, so
 please bear with me for the moment, while I test the API in real
 situations, and converge on a basic API that provides the stuff you
-meet in real HL7-life.
+meet in real HL7-life.  The focus of this API is on providing the HL7
+wrapping and composing of messages, not providing hundreds of prefab
+HL7 messages.
+
+Please refer to the POD documentation for examples and the API
+documentation.
 
 
 2.0 History
 -----------
+version 0.65:
+* the getRequest method of the Net::HL7::Daemon::Client has been enabled for
+  multiple incoming messages. This means that the getRequest method now tries
+  to read from the socket every time it is called.
+* Fixed some documentation
+
 version 0.64:
 * Fixed error in daemon and ack tests
 * Fixed erroneous setting of MSH fields in Message.pm

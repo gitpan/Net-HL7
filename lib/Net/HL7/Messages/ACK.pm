@@ -76,12 +76,13 @@ sub _init {
 	$msh->setField(12, $reqMsh->getField(12));
 	$msh->setField(15, "");
 	$msh->setField(16, "");
-	$msa->setField(3, $reqMsh->getField(10));
+	$msa->setField(2, $reqMsh->getField(10));
     }
 
     return 1;
 }
 
+=pod
 
 =item $ack->setAckCode($code, [$msg])
 
@@ -90,6 +91,7 @@ one of: A, E, R. Codes can be prepended with C or A, denoting enhanced
 or normal acknowledge mode. This denotes: accept, general error and
 reject respectively. The ACK module will determine the right answer
 mode (normal or enhanced) based upon the request, if not provided.
+The message provided in $msg wiull be set in MSA 3.
 
 =cut
 sub setAckCode {
@@ -109,6 +111,7 @@ sub setAckCode {
     }
 
     $self->getSegmentByIndex(1)->setField(1, $code);
+    $msg && $self->getSegmentByIndex(1)->setField(3, $msg);
 }
 
 
