@@ -3,14 +3,14 @@
 # File      : HL7.pm
 # Author    : D.A.Dokter
 # Created   : 30 Jan 2004
-# Version   : $Id: HL7.pm,v 1.2 2004/02/10 14:31:54 wyldebeast Exp $
+# Version   : $Id: HL7.pm,v 1.6 2004/06/15 08:46:44 wyldebeast Exp $
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
 
 package Net::HL7;
 
-our $VERSION = "0.71";
+our $VERSION = "0.72";
 
 =pod
     

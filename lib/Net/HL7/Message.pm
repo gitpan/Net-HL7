@@ -3,7 +3,7 @@
 # File      : Message.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:37:11 2002
-# Version   : $Id: Message.pm,v 1.12 2004/03/24 12:23:38 wyldebeast Exp $ 
+# Version   : $Id: Message.pm,v 1.15 2004/06/15 08:45:41 wyldebeast Exp $ 
 # Copyright : D.A.Dokter, Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -127,7 +127,7 @@ sub _init {
 	#
 	$segments[0] =~ /^([A-Z0-9]{3})(.)(.)(.)(.)(.)(.)/;
 
-	my ($hdr, $fldSep, $compSep, $repSep, $esc, $subCompSep, $fldSepCtrl, $ctrl) = 
+	my ($hdr, $fldSep, $compSep, $repSep, $esc, $subCompSep, $fldSepCtrl) = 
 	    ($1, $2, $3, $4, $5, $6, $7);
 
 	# Check whether field separator is repeated after 4 control characters
@@ -190,11 +190,16 @@ sub _init {
 
 	    my $seg;
 
+	    # untaint
+	    my $segClass = "Net::HL7::Segments::$name";
+	    $segClass =~ /^(.*)$/;
+	    $segClass = $1;
+
 	    # Let's see whether it's a special segment
             #
-	    if ( eval("require Net::HL7::Segments::$name;") ) {
+	    if ( eval("require $segClass;") ) {
 		unshift(@fields, $self->{FIELD_SEPARATOR});
-		$seg = eval{ "Net::HL7::Segments::$name"->new(\@fields); };
+		$seg = eval{ "$segClass"->new(\@fields); };
 	    }
 	    else {
 		$seg = new Net::HL7::Segment($name, \@fields);
@@ -401,53 +406,120 @@ sub toString {
     my ($self, $pretty) = @_;
     my $msg = "";
 
-    # Make sure MSH(1) and MSH(2) are ok, even if someone has changed these 
-    # values
-    #
+    # Make sure MSH(1) and MSH(2) are ok, even if someone has changed
+    # these values 
+    # 
     my $msh = $self->{SEGMENTS}->[0];
 
     $self->_resetCtrl($msh);
 
-    foreach my $seg (@{ $self->{SEGMENTS} }) {
-
-	$msg .= $seg->getName() . $self->{FIELD_SEPARATOR};
-
-	{
-	    no warnings;
-
-	    foreach ($seg->getFields($seg->getName() ne "MSH"? 1 : 2)) {
-		
-		if (ref($_) eq "ARRAY") {
-		    
-		    for (my $i = 0; $i < @{ $_ }; $i++) {
-			
-			if (ref($_[$i]) eq "ARRAY") {
-			    
-			    $msg .= join($self->{SUBCOMPONENT_SEPARATOR}, @{ $_[$i] });
-			}
-			else {
-			    $msg .= $_[$i];
-			}
-			
-			if ($i < (@{ $_ } - 1)) {
-			    $msg .= $self->{COMPONENT_SEPARATOR};
-			}
-		    }
-		}
-		else {
-		    $msg .= $_;
-		}
-
-		$msg .= $self->{FIELD_SEPARATOR};
-	    }
-	}
+    for (my $i = 0; $i < @{ $self->{SEGMENTS} }; $i++) {
 	
+	$msg .= $self->getSegmentAsString($i);
+
 	$pretty ? ($msg .= "\n") : ($msg .= $self->{SEGMENT_SEPARATOR});
     }
     
     return $msg;
 }
 
+
+=pod
+
+=item B<getSegmentAsString($index)>
+
+Get the string representation of the segment, in the context of this
+message. That means the string representation will use the message's
+separators.
+
+=cut
+sub getSegmentAsString {
+
+    my ($self, $index) = @_;
+
+    my $seg = $self->getSegmentByIndex($index);
+
+    $seg || return undef;
+
+    my $segStr = $seg->getName() . $self->{FIELD_SEPARATOR};
+    
+    {
+	no warnings;
+	
+	foreach ($seg->getFields($seg->getName() ne "MSH"? 1 : 2)) {
+	    
+	    if (ref($_) eq "ARRAY") {
+		
+		for (my $i = 0; $i < @{ $_ }; $i++) {
+		    
+		    if (ref($_->[$i]) eq "ARRAY") {
+			
+			$segStr .= join($self->{SUBCOMPONENT_SEPARATOR}, @{ $_->[$i] });
+		    }
+		    else {
+			$segStr .= $_->[$i];
+		    }
+		    
+		    if ($i < (@{ $_ } - 1)) {
+			$segStr .= $self->{COMPONENT_SEPARATOR};
+		    }
+		}
+	    }
+	    else {
+		$segStr .= $_;
+	    }
+	    
+	    $segStr .= $self->{FIELD_SEPARATOR};
+	}
+    }
+	
+    return $segStr;
+}
+
+
+=pod
+
+=item B<getSegmentFieldAsString($segmentIndex, $fieldIndex)>
+
+
+=cut
+sub getSegmentFieldAsString {
+ 
+    my ($self, $segIndex, $fldIndex) = @_;
+
+    my $seg = $self->getSegmentByIndex($segIndex);
+
+    $seg || return undef;
+
+    my $fld = $seg->getField($fldIndex);
+
+    $fld || return "";
+
+    my $fldStr = "";
+
+    if (ref($fld) eq "ARRAY") {
+	
+	for (my $i = 0; $i < @{ $fld }; $i++) {
+	    
+	    if (ref($fld->[$i]) eq "ARRAY") {
+		
+		$fldStr .= join($self->{SUBCOMPONENT_SEPARATOR}, @{ $fld->[$i] });
+	    }
+	    else {
+		$fldStr .= $fld->[$i];
+	    }
+	    
+	    if ($i < (@{ $fld } - 1)) {
+		$fldStr .= $self->{COMPONENT_SEPARATOR};
+	    }
+	}
+    }
+    else {
+	$fldStr .= $fld;
+    }
+    
+    return $fldStr;
+}
 
 1;
 

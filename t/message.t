@@ -4,7 +4,7 @@ BEGIN {
 
 require 5.004_05;
 use Config; my $perl = $Config{'perlpath'};
-use Test::More tests => 28;
+use Test::More tests => 34;
 use_ok("Net::HL7::Message");
 use_ok("Net::HL7::Segment");
 use_ok("Net::HL7::Segments::MSH");
@@ -136,5 +136,23 @@ $msg->setSegment($msh, 0);
 
 ok($msg->toString() eq "MSH*abcd*\r", "New MSH with setSegment");
 
+my $str = 'MSH|^~\\&|CodeRyte HL7|CodeRyte HQ|VISION|MISYS|200404061744||DFT^P03|TC-2743|P^T|2.3|||AL|NE||ASCII||| |';
 
+$msg = new Net::HL7::Message($str);
 
+ok($msg->toString(1) eq "$str\n", "Message from string and to string with subcomponents");
+
+# Segment as string
+$msg = new Net::HL7::Message("MSH*^~\\&*1\rPID*a^b^c*a^b1&b2^c*xxx\r");
+$xxx = new Net::HL7::Segment("XXX");
+$xxx->setField(2, ["a", ["b1", "b2"], "c"]);
+
+$msg->addSegment($xxx);
+
+ok($msg->getSegmentAsString(0) eq "MSH*^~\\&*1*", "MSH segment as string");
+ok($msg->getSegmentAsString(1) eq "PID*a^b^c*a^b1&b2^c*xxx*", "PID segment as string");
+ok($msg->getSegmentAsString(2) eq "XXX**a^b1&b2^c*", "XXX segment as string");
+
+# Get segment field as string
+ok($msg->getSegmentFieldAsString(0, 3) eq "1", "MSH(3) as string");
+ok($msg->getSegmentFieldAsString(1, 2) eq "a^b1&b2^c", "PID(2) as string");

@@ -41,7 +41,7 @@ $seg->setField(3, [1, 2, 3]);
 $seg->setField(8, $Net::HL7::NULL);
 
 ok(ref($seg->getField(3)) eq "ARRAY", "Composed field 1^2^3");
-ok($seg->getField(8) eq "\"\"", "HL7 NULL value");
+ok($seg->getField(8) eq "\"\"" && $seg->getField(8) eq $Net::HL7::NULL, "HL7 NULL value");
 my @subFields = $seg->getField(3);
 
 ok(@subFields == 3, "Getting composed fields as array");
