@@ -55,6 +55,7 @@ if ($pid) {
 		last;
 	}
 
+	$d->close();
 	exit;
 } 
 
@@ -71,3 +72,6 @@ $resp || die "No valid response";
 $msh = $resp->getSegmentByIndex(0);
 
 testEq(3, $msh->getField(9), "ACK");
+
+$conn->close();
+

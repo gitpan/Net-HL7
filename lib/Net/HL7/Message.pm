@@ -3,7 +3,7 @@
 # File      : Message.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:37:11 2002
-# Version   : $Id: Message.pm,v 1.3 2003/03/31 07:47:22 wyldebeast Exp $ 
+# Version   : $Id: Message.pm,v 1.5 2003/04/07 19:29:44 wyldebeast Exp $ 
 # Copyright : D.A.Dokter, Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -80,7 +80,7 @@ sub _init {
     # If an HL7 string is given to the constructor, parse it.
     if ($hl7str) {
 
-	foreach my $segment (split("\\" . $SEGMENT_SEPARATOR, $hl7str)) {
+	foreach my $segment (split("[\n\\$SEGMENT_SEPARATOR]", $hl7str)) {
 	    
 	    $segment =~ /^([A-Z0-9]{3})(.)/;
 
@@ -116,17 +116,17 @@ sub _init {
     else {
 	my $msh = new Net::HL7::Segments::MSH();
 
-	$msh->setField(6, strftime($HL7_DATE_FORMAT, localtime));
+	$msh->setField(7, strftime($HL7_DATE_FORMAT, localtime));
 
 	my $ext = rand(1);
         $ext =~ s/[^0-9]//g;
         $ext = "." . substr($ext, 1, 5);
 
-	$msh->setField(9, $msh->getField(6) . $ext);
-
-	$msh->setField(11, $HL7_VERSION);
-	$msh->setField(14, "NE");
-	$msh->setField(15, "NE");
+	$msh->setField(10, $msh->getField(7) . $ext);
+	$msh->setField(11, "P");
+	$msh->setField(12, $HL7_VERSION);
+	$msh->setField(15, "AL");
+	$msh->setField(16, "NE");
 
 	$self->addSegment($msh);
     }

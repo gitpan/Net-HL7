@@ -36,9 +36,9 @@ require 5.004_05;
 use Config; $perl = $Config{'perlpath'};
 use Net::HL7::Daemon;
 
-my $d = new Net::HL7::Daemon(LocalPort => 12001);
+my $d = new Net::HL7::Daemon(LocalPort => 12009);
 
 testNe(2, $d->getHost(), "");
-testEq(3, $d->getPort(), "12001");
+testEq(3, $d->getPort(), "12009");
 
 $d->close();

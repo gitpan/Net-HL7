@@ -40,12 +40,12 @@ my $ack = new Net::HL7::Messages::ACK($msg);
 
 testEq(2, $ack->getSegmentByIndex(1)->getField(1), "CA");
 
-$msh->setField(14, "");
+$msh->setField(15, "");
 $ack = new Net::HL7::Messages::ACK($msg);
 
 testEq(3, $ack->getSegmentByIndex(1)->getField(1), "CA");
 
-$msh->setField(15, "");
+$msh->setField(16, "");
 $ack = new Net::HL7::Messages::ACK($msg);
 
 testEq(4, $ack->getSegmentByIndex(1)->getField(1), "AA");

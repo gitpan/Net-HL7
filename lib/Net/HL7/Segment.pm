@@ -3,7 +3,7 @@
 # File      : Segment.pm
 # Author    : Duco Dokter
 # Created   : Tue Mar  4 13:03:00 2003
-# Version   : $Id: Segment.pm,v 1.2 2003/03/31 07:47:22 wyldebeast Exp $ 
+# Version   : $Id: Segment.pm,v 1.3 2003/04/04 10:50:57 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################

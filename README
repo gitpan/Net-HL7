@@ -23,6 +23,16 @@ meet in real HL7-life.
 
 2.0 History
 -----------
+version 0.64:
+* Fixed error in daemon and ack tests
+* Fixed erroneous setting of MSH fields in Message.pm
+* set MSH(11) to P and MSH(15) to AL per default
+* Made new() method of Message also split message string on \n
+* ACK now takes MSH(11) and MSH(12) from incoming MSH, and sets MSH(15) and MSH(16)
+  to the empty string.
+* Fixed erroneous sendAck and sendNack methods. The stuff is now sent as a single 
+  line, to prevent perl from inserting separators, like end of lines, etc.
+
 version 0.63:
 * fixed some POD errors
 * added the sendResponse method to Net::HL7::Daemon::Client

@@ -3,7 +3,7 @@
 # File      : ACK.pm
 # Author    : Duco Dokter
 # Created   : Wed Mar 26 22:40:19 2003
-# Version   : $Id: $ 
+# Version   : $Id: ACK.pm,v 1.2 2003/04/14 18:59:32 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -72,6 +72,10 @@ sub _init {
 	$msh->setField(5, $reqMsh->getField(3));
 	$msh->setField(6, $reqMsh->getField(4));
 	$msh->setField(10, $reqMsh->getField(10));
+	$msh->setField(11, $reqMsh->getField(11));
+	$msh->setField(12, $reqMsh->getField(12));
+	$msh->setField(15, "");
+	$msh->setField(16, "");
 	$msa->setField(3, $reqMsh->getField(10));
     }
 

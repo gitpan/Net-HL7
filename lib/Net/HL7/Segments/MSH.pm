@@ -3,7 +3,7 @@
 # File      : Segment.pm
 # Author    : Duco Dokter
 # Created   : Tue Mar  4 13:03:00 2003
-# Version   : $Id: Segment.pm,v 1.1.1.1 2003/03/25 13:12:09 wyldebeast Exp $ 
+# Version   : $Id: MSH.pm,v 1.1 2003/04/04 10:50:57 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -19,27 +19,28 @@ use base qw(Net::HL7::Segment);
 
 =head1 NAME
 
-Net::HL7::MSH
+Net::HL7::Segments::MSH
 
 
 =head1 SYNOPSIS
 
-my $seg = new Net::HL7::MSH();
+my $seg = new Net::HL7::Segments::MSH();
 
 $seg->setField(2, "^~\&");
 print $seg->getField(1);
 
 =head1 DESCRIPTION
 
-The Net::HL7::MSH is an implementation of the L<Net::HL7::Segment>
-class. The segment is a bit different from other segments, in that the
-first field is the field delimiter after the segment name. Other
-fields thus start counting from 2!
+The Net::HL7::Segments::MSH is an implementation of the
+L<Net::HL7::Segment> class. The segment is a bit different from other
+segments, in that the first field is the field delimiter after the
+segment name. Other fields thus start counting from 2!
 
 =head1 METHODS
 
+=over 3
 
-=head2 new()
+=item new Net::HL7::Segments::MSH()
 
 This constructor takes no arguments.
 

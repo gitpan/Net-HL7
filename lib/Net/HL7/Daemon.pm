@@ -156,7 +156,6 @@ sub getRequest
 Write a I<Net::HL7::Messages::ACK> object to the client as a response.
 
 =cut
-
 sub sendAck {
 
     my $self = shift;
@@ -166,9 +165,8 @@ sub sendAck {
 	$res = new Net::HL7::Messages::ACK($self->getRequest());
     }
 
-    print $self $Net::HL7::Connection::MESSAGE_PREFIX;
-    print $self $res->toString();
-    print $self $Net::HL7::Connection::MESSAGE_SUFFIX;
+    print $self $Net::HL7::Connection::MESSAGE_PREFIX . $res->toString() .
+	$Net::HL7::Connection::MESSAGE_SUFFIX;
 }
 
 
@@ -190,9 +188,8 @@ sub sendNack {
 
     $res->setAckCode("E", $msg);
 
-    print $self $Net::HL7::Connection::MESSAGE_PREFIX;
-    print $self $res->toString();
-    print $self $Net::HL7::Connection::MESSAGE_SUFFIX;
+    print $self $Net::HL7::Connection::MESSAGE_PREFIX . $res->toString() .
+	$Net::HL7::Connection::MESSAGE_SUFFIX;
 }
 
 
