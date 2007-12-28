@@ -4,7 +4,7 @@ BEGIN {
 
 require 5.004_05;
 use Config; my $perl = $Config{'perlpath'};
-use Test::More tests => 34;
+use Test::More tests => 35;
 use_ok("Net::HL7::Message");
 use_ok("Net::HL7::Segment");
 use_ok("Net::HL7::Segments::MSH");
@@ -25,6 +25,8 @@ ok($msg->getSegmentByIndex(0)->getName() eq "MSH", "Segment 0 name MSH");
 ok($msg->getSegmentByIndex(1)->getName() eq "PID", "Segment 1 name PID");
 ok($msg->getSegmentByIndex(0)->getField(3) eq "XXX", "3d field of MSH");
 ok($msg->getSegmentByIndex(1)->getField(2) eq "Foo", "2nd field of PID");
+
+$msg = new Net::HL7::Message("MSH|^~\\&|1|\rPID; `touch /tmp/lala`|||xxx|\r");
 
 $msg = new Net::HL7::Message("MSH|^~\\&|1|\rPID|||xxx|\r");
 
@@ -156,3 +158,7 @@ ok($msg->getSegmentAsString(2) eq "XXX**a^b1&b2^c*", "XXX segment as string");
 # Get segment field as string
 ok($msg->getSegmentFieldAsString(0, 3) eq "1", "MSH(3) as string");
 ok($msg->getSegmentFieldAsString(1, 2) eq "a^b1&b2^c", "PID(2) as string");
+
+$msg->removeSegmentByName('PID');
+
+ok($msg->getSegmentAsString(1) eq "XXX**a^b1&b2^c*", "Removed segment by name");

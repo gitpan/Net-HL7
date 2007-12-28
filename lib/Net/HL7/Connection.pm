@@ -3,7 +3,7 @@
 # File      : Connection.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:43:16 2002
-# Version   : $Id: Connection.pm,v 1.4 2004/02/02 11:43:13 wyldebeast Exp $ 
+# Version   : $Id: Connection.pm,v 1.5 2005/04/20 07:29:44 wyldebeast Exp $ 
 # Copyright : D.A.Dokter
 #
 ################################################################################
@@ -15,7 +15,7 @@ use strict;
 #use warnings;
 use Net::HL7::Response;
 use IO::Socket;
-
+use Errno qw(:POSIX);
 
 =head1 NAME
 
@@ -76,10 +76,10 @@ The following methods are available:
 
 =over 4
 
-=item B<$c = new Net::HL7::Connection( $host, $port )>
-
+=item B<$c = new Net::HL7::Connection( $host, $port[, Timeout => timeout] )>
 Creates a connection to a HL7 server, or returns undef when a
-connection could not be established.are:
+connection could not be established. timeout is optional, and will
+default to 10 seconds.
 
 =cut
 
@@ -96,8 +96,9 @@ sub new {
 
 sub _init {
 
-    my ($self, $host, $port) = @_;
-
+    my ($self, $host, $port, %arg) = @_;
+    
+    $self->{Timeout} = $arg{Timeout} || 10;
     $self->{HANDLE} = $self->_connect($host, $port);
 }
 
@@ -111,7 +112,7 @@ sub _connect {
 	 Proto    => "tcp",
 	 PeerAddr => $host,
 	 PeerPort => $port,
-	 timeout  => 10
+	 Timeout  => $self->{Timeout}
 	 )
 	||
 	return undef;
@@ -145,20 +146,48 @@ sub send {
 
 	$/ = $MESSAGE_SUFFIX;
 
-	# Send message, prefixed with HL7 message start symbol(s)
-	print $handle $MESSAGE_PREFIX . $hl7Msg . $MESSAGE_SUFFIX;
-     
-	# Read response in slurp mode
-	$buff = <$handle>;
+        # Send message, prefixed with HL7 message start symbol(s)
+        # Use an alarm in for the timeout.
+        eval {
+            local $SIG{ALRM} = sub { die "alarm\n" };
+            alarm $self->{Timeout};
+            print $handle $MESSAGE_PREFIX . $hl7Msg . $MESSAGE_SUFFIX;
+            alarm 0;
+        };
+        if ($@) {
+            if ($@ eq "alarm\n") {
+                $! = ETIMEDOUT();
+                return undef;
+            }
+            die $@;
+        }
+
+        # Read response in slurp mode
+        eval {
+            local $SIG{ALRM} = sub { die "alarm\n" };
+            alarm $self->{Timeout};
+            $buff = <$handle>;
+            alarm 0;
+        };
+        if ($@) {
+            if ($@ eq "alarm\n") {
+                $! = ETIMEDOUT();
+                return undef;
+            }
+            die $@;
+        }
     }
 
     # Remove message prefix and suffix
-    $buff =~ s/^$MESSAGE_PREFIX//;
-    $buff =~ s/$MESSAGE_SUFFIX$//;
-
-    return new Net::HL7::Response($buff);
+    if (defined($buff)) {
+        $buff =~ s/^$MESSAGE_PREFIX//;
+        $buff =~ s/$MESSAGE_SUFFIX$//;
+        
+        return new Net::HL7::Response($buff);
+    } else {
+        return $buff;
+    }
 }
-
 
 =pod
 

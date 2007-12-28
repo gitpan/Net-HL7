@@ -3,7 +3,7 @@
 # File      : Segment.pm
 # Author    : Duco Dokter
 # Created   : Tue Mar  4 13:03:00 2003
-# Version   : $Id: Segment.pm,v 1.12 2004/02/10 14:31:54 wyldebeast Exp $ 
+# Version   : $Id: Segment.pm,v 1.13 2006/12/21 13:36:27 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -98,9 +98,9 @@ may also be a reference to an array (that may itself contain arrays)
 to support composed fields (and subcomponents).
 
 To set a field to the HL7 null value, instead of omitting a field, can
-be achieved with the Net::HL7::Message::NULL type, like:
+be achieved with the Net::HL7::NULL type, like:
 
-  $segment->setField(8, $Net::HL7::Message::NULL);
+  $segment->setField(8, $Net::HL7::NULL);
 
 This will render the field as the double quote ("").
 If values are not provided at all, the method will just return.

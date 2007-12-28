@@ -3,7 +3,7 @@
 # File      : Message.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:37:11 2002
-# Version   : $Id: Message.pm,v 1.15 2004/06/15 08:45:41 wyldebeast Exp $ 
+# Version   : $Id: Message.pm,v 1.18 2007/12/05 12:40:06 wyldebeast Exp $ 
 # Copyright : D.A.Dokter, Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -171,7 +171,7 @@ sub _init {
 		    my @subComps = split('\\' . $self->{SUBCOMPONENT_SEPARATOR}, $comps[$k]);
 			
 		    # Make it a ref or just the value
-		    if (@subComps == 1) {
+		    if (@subComps <= 1) {
 			$comps[$k] = $subComps[0];
 		    }
 		    else {
@@ -180,7 +180,7 @@ sub _init {
 
 		}
 
-		if (@comps == 1) {
+		if (@comps <= 1) {
 		    $fields[$j] = $comps[0];
 		}
 		else {
@@ -191,13 +191,17 @@ sub _init {
 	    my $seg;
 
 	    # untaint
-	    my $segClass = "Net::HL7::Segments::$name";
-	    $segClass =~ /^(.*)$/;
-	    $segClass = $1;
+	    my $segClass = "";
+
+	    if ($name =~ /^[A-Z]{3}$/) {
+		$segClass = "Net::HL7::Segments::$name";
+		$segClass =~ /^(.*)$/;
+		$segClass = $1;
+	    }
 
 	    # Let's see whether it's a special segment
             #
-	    if ( eval("require $segClass;") ) {
+	    if ( $segClass && eval("require $segClass;") ) {
 		unshift(@fields, $self->{FIELD_SEPARATOR});
 		$seg = eval{ "$segClass"->new(\@fields); };
 	    }
@@ -520,6 +524,32 @@ sub getSegmentFieldAsString {
     
     return $fldStr;
 }
+
+
+=pod
+
+=item B<removeSegmentByName($name)>
+
+Remove the segment indexed by $name. If it doesn't exist, nothing
+happens, if it does, all segments after this one will be moved one
+index up.
+
+=cut
+sub removeSegmentByName {
+
+     my ($self, $name) = @_;
+     my $i = 0;
+
+     foreach (@{ $self->{SEGMENTS} }) {
+         if ($_->getName() eq $name) {
+             splice( @{ $self->{SEGMENTS} }, $i, 1);
+         }
+         else {
+             $i++;
+         }
+     }
+}
+
 
 1;
 

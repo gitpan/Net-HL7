@@ -3,14 +3,14 @@
 # File      : HL7.pm
 # Author    : D.A.Dokter
 # Created   : 30 Jan 2004
-# Version   : $Id: HL7.pm,v 1.6 2004/06/15 08:46:44 wyldebeast Exp $
+# Version   : $Id: HL7.pm,v 1.7 2005/04/20 07:29:43 wyldebeast Exp $
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
 
 package Net::HL7;
 
-our $VERSION = "0.72";
+our $VERSION = "0.74";
 
 =pod
     
@@ -47,7 +47,8 @@ and add segments like:
 
 For details, please consult the man pages of each specific class, or
 consult the generated API docs on
-I<http://hl7toolkit.sourceforge.net/>.
+I<http://hl7toolkit.sourceforge.net/>. You might also check the test files
+in the 't' directory for examples.
 
 The Net::HL7 class is only used for documentation purposes (the stuff
 you're reading right now), to set HL7 configuration properties such as

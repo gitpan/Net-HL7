@@ -3,7 +3,7 @@
 # File      : Request.pm
 # Author    : Duco Dokter
 # Created   : Tue Mar  4 13:03:00 2003
-# Version   : $Id: Request.pm,v 1.2 2004/02/10 14:31:54 wyldebeast Exp $ 
+# Version   : $Id: Request.pm,v 1.3 2005/04/20 07:29:44 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -29,7 +29,14 @@ Net::HL7::Request
 my $request = new Net::HL7::Request();
 my $conn = new Net::HL7::Connection('localhost', 8089);
 
-$request->setField("MSH", 1, "");
+my $msh = new Net::HL7::Segments::MSH();
+
+my $seg1 = new Net::HL7::Segment("PID");
+
+$seg1->setField(1, "foo");
+
+$request->addSegment($msh);
+$request->addSegment($seg1);
 
 my $response = $conn->send($request);
 

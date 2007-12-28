@@ -139,6 +139,17 @@ POD's yourself (man perlpod).
 3.0 History
 -----------
 
+version 0.74:
+* Security fix to prevent execution of arbitrary code, thanx to  
+  Noam Rathaus.
+* Fixed documentation issue (again, hinted by Brent B. Powers)
+* Added removeSegmentByName method (added by Sebastian John)
+
+version 0.73:
+* Fixed issue 1035505 with proposed patch of Brent B. Powers
+* Fixed issue 1034857
+* Fixed issue 1033989 with proposed patch of Brent B. Powers
+
 version 0.72:
 * Fixed broken Message.pm: new message from string with subcomponents
   didn't produce a correct string with toString. Thanx to Jason Aragorn 
