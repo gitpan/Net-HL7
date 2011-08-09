@@ -139,11 +139,20 @@ POD's yourself (man perlpod).
 3.0 History
 -----------
 
+0.76:
+* Added getFieldAsString method to Segment
+* Added tests for above
+* Made getSegmentAsString use getFieldAsString 
+
+version 0.75:
+
+* Fixed regex describing segment name in Message.pm for compatibility
+  with all segment names.
+
 version 0.74:
-* Security fix to prevent execution of arbitrary code, thanx to  
-  Noam Rathaus.
 * Fixed documentation issue (again, hinted by Brent B. Powers)
 * Added removeSegmentByName method (added by Sebastian John)
+* Fix for regex describing segment name in Message.pm, hinted by Brent B.Powers
 
 version 0.73:
 * Fixed issue 1035505 with proposed patch of Brent B. Powers

@@ -32,6 +32,8 @@ $msg = new Net::HL7::Message("MSH|^~\\&|1|\rPID|||xxx|\r");
 
 ok($msg->toString() eq "MSH|^~\\&|1|\rPID|||xxx|\r", "String representation of message");
 
+
+
 ok($msg->toString(1) eq "MSH|^~\\&|1|\nPID|||xxx|\n", "Pretty print representation of message");
 ok($msg->getSegmentByIndex(0)->getField(2) eq "^~\\&", "Encoding characters (MSH(2))");
 
@@ -162,3 +164,4 @@ ok($msg->getSegmentFieldAsString(1, 2) eq "a^b1&b2^c", "PID(2) as string");
 $msg->removeSegmentByName('PID');
 
 ok($msg->getSegmentAsString(1) eq "XXX**a^b1&b2^c*", "Removed segment by name");
+

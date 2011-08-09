@@ -1,9 +1,9 @@
 BEGIN {
-	unshift(@INC, "./lib");
+    unshift(@INC, "./lib");
 }
 
 require 5.004_05;
-use Test::More tests => 19;
+use Test::More tests => 22;
 use_ok("Net::HL7::Segment");
 use_ok("Net::HL7");
 
@@ -67,3 +67,16 @@ ok($seg->size() == 8, "Size operator");
 $seg->setField(12, "x");
 
 ok($seg->size() == 12, "Size operator");
+
+$seg->setField(8, "a");
+
+ok($seg->getFieldAsString(8) eq "a", "Get field as string");
+
+$seg->setField(8, ["a", "b"]);
+
+ok($seg->getFieldAsString(8) eq "a^b", "Get field as string, components");
+
+$seg->setField(8, ["a", ["b", "c"]]);
+
+ok($seg->getFieldAsString(8) eq "a^b&c", "Get field as string, subcomponents");
+

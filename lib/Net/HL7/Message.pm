@@ -3,7 +3,7 @@
 # File      : Message.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:37:11 2002
-# Version   : $Id: Message.pm,v 1.18 2007/12/05 12:40:06 wyldebeast Exp $ 
+# Version   : $Id: Message.pm,v 1.19 2009/02/05 09:11:57 wyldebeast Exp $ 
 # Copyright : D.A.Dokter, Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -193,7 +193,7 @@ sub _init {
 	    # untaint
 	    my $segClass = "";
 
-	    if ($name =~ /^[A-Z]{3}$/) {
+	    if ($name =~ /^[A-Z][A-Z0-9]{2}$/) {
 		$segClass = "Net::HL7::Segments::$name";
 		$segClass =~ /^(.*)$/;
 		$segClass = $1;
@@ -447,32 +447,14 @@ sub getSegmentAsString {
 
     my $segStr = $seg->getName() . $self->{FIELD_SEPARATOR};
     
+    my $start = $seg->getName() eq "MSH" ? 2 : 1;
+
     {
 	no warnings;
 	
-	foreach ($seg->getFields($seg->getName() ne "MSH"? 1 : 2)) {
-	    
-	    if (ref($_) eq "ARRAY") {
-		
-		for (my $i = 0; $i < @{ $_ }; $i++) {
-		    
-		    if (ref($_->[$i]) eq "ARRAY") {
-			
-			$segStr .= join($self->{SUBCOMPONENT_SEPARATOR}, @{ $_->[$i] });
-		    }
-		    else {
-			$segStr .= $_->[$i];
-		    }
-		    
-		    if ($i < (@{ $_ } - 1)) {
-			$segStr .= $self->{COMPONENT_SEPARATOR};
-		    }
-		}
-	    }
-	    else {
-		$segStr .= $_;
-	    }
-	    
+	foreach ($start..$seg->size()) {
+
+	    $segStr .= $self->getSegmentFieldAsString($index, $_);
 	    $segStr .= $self->{FIELD_SEPARATOR};
 	}
     }
@@ -495,34 +477,7 @@ sub getSegmentFieldAsString {
 
     $seg || return undef;
 
-    my $fld = $seg->getField($fldIndex);
-
-    $fld || return "";
-
-    my $fldStr = "";
-
-    if (ref($fld) eq "ARRAY") {
-	
-	for (my $i = 0; $i < @{ $fld }; $i++) {
-	    
-	    if (ref($fld->[$i]) eq "ARRAY") {
-		
-		$fldStr .= join($self->{SUBCOMPONENT_SEPARATOR}, @{ $fld->[$i] });
-	    }
-	    else {
-		$fldStr .= $fld->[$i];
-	    }
-	    
-	    if ($i < (@{ $fld } - 1)) {
-		$fldStr .= $self->{COMPONENT_SEPARATOR};
-	    }
-	}
-    }
-    else {
-	$fldStr .= $fld;
-    }
-    
-    return $fldStr;
+    return $seg->getFieldAsString($fldIndex);
 }
 
 

@@ -148,6 +148,48 @@ sub getField {
 }    
 
 
+
+=pod
+
+=item B<getFieldAsString()>
+
+Get the string representation of the field
+
+=cut
+sub getFieldAsString {
+
+    my ($self, $index) = @_;
+
+    my $fieldStr = "";
+    my $field = $self->{FIELDS}->[$index];
+
+    $field || return "";
+
+    if (ref($field) eq "ARRAY") {
+		
+	for (my $i = 0; $i < @{ $field }; $i++) {
+		    
+	    if (ref($field->[$i]) eq "ARRAY") {
+		
+		$fieldStr .= join($Net::HL7::SUBCOMPONENT_SEPARATOR, @{ $field->[$i] });
+	    }
+	    else {
+		$fieldStr .= $field->[$i];
+	    }
+	    
+	    if ($i < (@{ $field } - 1)) {
+		$fieldStr .= $Net::HL7::COMPONENT_SEPARATOR;
+	    }
+	}
+    }
+    else {
+	$fieldStr .= $field;
+    }
+    
+    return $fieldStr;
+}
+
+
 =pod
 
 =item B<size()>
