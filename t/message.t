@@ -4,7 +4,7 @@ BEGIN {
 
 require 5.004_05;
 use Config; my $perl = $Config{'perlpath'};
-use Test::More tests => 35;
+use Test::More tests => 36;
 use_ok("Net::HL7::Message");
 use_ok("Net::HL7::Segment");
 use_ok("Net::HL7::Segments::MSH");
@@ -165,3 +165,8 @@ $msg->removeSegmentByName('PID');
 
 ok($msg->getSegmentAsString(1) eq "XXX**a^b1&b2^c*", "Removed segment by name");
 
+# Try with 0 value in field
+#
+$msg = new Net::HL7::Message("MSH|^~\\&|0|\rPID|||xxx|\r");
+
+ok($msg->toString() eq "MSH|^~\\&|0|\rPID|||xxx|\r", "String representation of message");

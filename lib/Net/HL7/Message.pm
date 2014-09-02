@@ -3,7 +3,7 @@
 # File      : Message.pm
 # Author    : Duco Dokter
 # Created   : Mon Nov 11 17:37:11 2002
-# Version   : $Id: Message.pm,v 1.19 2009/02/05 09:11:57 wyldebeast Exp $ 
+# Version   : $Id: Message.pm,v 1.20 2010/11/25 15:06:24 wyldebeast Exp $ 
 # Copyright : D.A.Dokter, Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -419,9 +419,9 @@ sub toString {
 
     for (my $i = 0; $i < @{ $self->{SEGMENTS} }; $i++) {
 	
-	$msg .= $self->getSegmentAsString($i);
+        $msg .= $self->getSegmentAsString($i);
 
-	$pretty ? ($msg .= "\n") : ($msg .= $self->{SEGMENT_SEPARATOR});
+        $pretty ? ($msg .= "\n") : ($msg .= $self->{SEGMENT_SEPARATOR});
     }
     
     return $msg;
@@ -450,13 +450,13 @@ sub getSegmentAsString {
     my $start = $seg->getName() eq "MSH" ? 2 : 1;
 
     {
-	no warnings;
+        no warnings;
 	
-	foreach ($start..$seg->size()) {
-
-	    $segStr .= $self->getSegmentFieldAsString($index, $_);
-	    $segStr .= $self->{FIELD_SEPARATOR};
-	}
+        foreach ($start..$seg->size()) {
+            
+            $segStr .= $self->getSegmentFieldAsString($index, $_);
+            $segStr .= $self->{FIELD_SEPARATOR};
+        }
     }
 	
     return $segStr;

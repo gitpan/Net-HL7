@@ -3,7 +3,7 @@
 # File      : Segment.pm
 # Author    : Duco Dokter
 # Created   : Tue Mar  4 13:03:00 2003
-# Version   : $Id: Segment.pm,v 1.13 2006/12/21 13:36:27 wyldebeast Exp $ 
+# Version   : $Id: Segment.pm,v 1.14 2010/11/25 15:06:24 wyldebeast Exp $ 
 # Copyright : Wyldebeast & Wunderliebe
 #
 ################################################################################
@@ -77,10 +77,10 @@ sub _init {
 
     if ($fieldsRef && ref($fieldsRef) eq "ARRAY") {
 
-	for (my $i = 0; $i < @{ $fieldsRef }; $i++) {
+        for (my $i = 0; $i < @{ $fieldsRef }; $i++) {
 	    
-	    $self->setField($i + 1, $fieldsRef->[$i]);
-	}
+            $self->setField($i + 1, $fieldsRef->[$i]);
+        }
     }
 
     return 1;
@@ -135,15 +135,15 @@ sub getField {
     my ($self, $index) = @_;
 
     if (wantarray) {
-	if (ref($self->{FIELDS}->[$index]) eq "ARRAY") {
-	    return @{ $self->{FIELDS}->[$index]};
-	}
-	else {
-	    return ($self->{FIELDS}->[$index]);
-	}
+        if (ref($self->{FIELDS}->[$index]) eq "ARRAY") {
+            return @{ $self->{FIELDS}->[$index]};
+        }
+        else {
+            return ($self->{FIELDS}->[$index]);
+        }
     }
     else {
-	return $self->{FIELDS}->[$index];
+        return $self->{FIELDS}->[$index];
     }
 }    
 
@@ -163,27 +163,25 @@ sub getFieldAsString {
     my $fieldStr = "";
     my $field = $self->{FIELDS}->[$index];
 
-    $field || return "";
-
     if (ref($field) eq "ARRAY") {
 		
-	for (my $i = 0; $i < @{ $field }; $i++) {
+        for (my $i = 0; $i < @{ $field }; $i++) {
 		    
-	    if (ref($field->[$i]) eq "ARRAY") {
-		
-		$fieldStr .= join($Net::HL7::SUBCOMPONENT_SEPARATOR, @{ $field->[$i] });
-	    }
-	    else {
-		$fieldStr .= $field->[$i];
-	    }
-	    
-	    if ($i < (@{ $field } - 1)) {
-		$fieldStr .= $Net::HL7::COMPONENT_SEPARATOR;
-	    }
-	}
+            if (ref($field->[$i]) eq "ARRAY") {
+                
+                $fieldStr .= join($Net::HL7::SUBCOMPONENT_SEPARATOR, @{ $field->[$i] });
+            }
+            else {
+                $fieldStr .= $field->[$i];
+            }
+            
+            if ($i < (@{ $field } - 1)) {
+                $fieldStr .= $Net::HL7::COMPONENT_SEPARATOR;
+            }
+        }
     }
     else {
-	$fieldStr .= $field;
+        $fieldStr .= $field;
     }
     
     return $fieldStr;

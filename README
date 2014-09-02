@@ -139,6 +139,10 @@ POD's yourself (man perlpod).
 3.0 History
 -----------
 
+0.77:
+* Fixed Segment->getFieldAsString so as to properly return values that
+  Perl considers 'not true'.
+
 0.76:
 * Added getFieldAsString method to Segment
 * Added tests for above
